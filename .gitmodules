@@ -1,0 +1,30 @@
+[submodule "services/auth-service"]
+	path = services/auth-service
+	url = https://github.com/vshengur/bookings.auth-service.git
+[submodule "services/booking-service"]
+	path = services/booking-service
+	url = https://github.com/vshengur/bookings.booking-service.git
+[submodule "services/inventory-service"]
+	path = services/inventory-service
+	url = https://github.com/vshengur/bookings.inventory-service.git
+[submodule "services/payment-service"]
+	path = services/payment-service
+	url = https://github.com/vshengur/bookings.payment-service.git
+[submodule "services/notification-service"]
+	path = services/notification-service
+	url = https://github.com/vshengur/bookings.notification-service.git
+[submodule "services/api-gateway"]
+	path = services/api-gateway
+	url = https://github.com/vshengur/bookings.api-gateway.git
+[submodule "services/monitoring"]
+	path = services/monitoring
+	url = https://github.com/vshengur/bookings.monitoring.git
+[submodule "frontend/booking-frontend"]
+	path = frontend/booking-frontend
+	url = https://github.com/vshengur/bookings.booking-frontend.git
+[submodule "frontend/payment-frontend"]
+	path = frontend/payment-frontend
+	url = https://github.com/vshengur/bookings.payment-frontend.git
+[submodule "frontend/notification-frontend"]
+	path = frontend/notification-frontend
+	url = https://github.com/vshengur/bookings.notification-frontend.git
