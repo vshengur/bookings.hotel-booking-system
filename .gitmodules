@@ -28,3 +28,6 @@
 [submodule "frontend/notification-frontend"]
 	path = frontend/notification-frontend
 	url = https://github.com/vshengur/bookings.notification-frontend.git
+[submodule "services/consul"]
+	path = services/consul
+	url = https://github.com/vshengur/bookings.consul.git
