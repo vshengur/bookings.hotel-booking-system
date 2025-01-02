@@ -1,22 +1,22 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: api-gateway
+  name: auth-service
   labels:
-    app: api-gateway
+    app: auth-service
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: api-gateway
+      app: auth-service
   template:
     metadata:
       labels:
-        app: api-gateway
+        app: auth-service
     spec:
       containers:
-      - name: api-gateway
-        image: bookings-api-gateway:latest
+      - name: auth-service
+        image: bookings-auth-service:latest
         ports:
         - containerPort: 8080
         env:
@@ -55,10 +55,10 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: api-gateway-service
+  name: auth-service-service
 spec:
   selector:
-    app: api-gateway
+    app: auth-service
   ports:
   - protocol: TCP
     port: 8080
