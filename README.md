@@ -4,7 +4,7 @@
 
 ### Docker Compose:
 
-- docker-compose up --build
+- docker-compose -f docker-compose.auth.yaml up --build
 
 ### Kubernetes:
 
