@@ -16,12 +16,12 @@ type AuthService struct {
 	oauthConfig *goauth2.Config
 }
 
-func NewAuthService(clientID, clientSecret string) *AuthService {
+func NewAuthService(clientID, clientSecret, redirectURL string) *AuthService {
 	return &AuthService{
 		oauthConfig: &goauth2.Config{
 			ClientID:     clientID,
 			ClientSecret: clientSecret,
-			RedirectURL:  "http://localhost:8080/auth/callback",
+			RedirectURL:  redirectURL,
 			Scopes:       []string{googleoauth.UserinfoEmailScope, googleoauth.UserinfoProfileScope},
 			Endpoint:     google.Endpoint,
 		},
