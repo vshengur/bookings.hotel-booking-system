@@ -1,5 +1,5 @@
 # Указание базового образа с поддержкой Go
-FROM golang:1.23 as builder
+FROM golang:1.23 AS builder
 
 # Установка рабочей директории
 WORKDIR /app
