@@ -13,16 +13,23 @@ import (
 func SetupRoutes(r *gin.Engine, db *gorm.DB) {
 	userRepo := repository.NewUserRepository(db)
 
-	authService := handlers.AuthHandler{
-		AuthService: services.NewAuthService(config.AppConfig.GoogleClientID, config.AppConfig.GoogleSecret, config.AppConfig.GoogleRedirectURL),
-		UserRepo:    userRepo,
+	authHandler := handlers.AuthHandler{
+		AuthService: services.NewAuthService(
+			config.AppConfig.GoogleClientID,
+			config.AppConfig.GoogleSecret,
+			config.AppConfig.GoogleRedirectURL,
+		),
+		UserRepo: userRepo,
 	}
 
 	userHandler := handlers.UserHandler{
 		UserRepo: userRepo,
 	}
 
-	r.GET("/auth/callback", authService.GoogleCallback)
+	// Новый маршрут для авторизации
+	r.GET("/auth/login", authHandler.Login)
+	// Callback после авторизации
+	r.GET("/auth/callback", authHandler.GoogleCallback)
 
 	// CRUD для пользователей
 	r.GET("/users", userHandler.GetAllUsers)

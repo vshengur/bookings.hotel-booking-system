@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"fmt"
+	"log"
 
 	goauth2 "golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
@@ -28,12 +29,18 @@ func NewAuthService(clientID, clientSecret, redirectURL string) *AuthService {
 	}
 }
 
+func (a *AuthService) GenerateAuthURL() string {
+	return a.oauthConfig.AuthCodeURL("state-token", goauth2.AccessTypeOffline)
+}
+
 func (a *AuthService) HandleGoogleCallback(code string) (*models.User, error) {
 	// Обмен кода на токен доступа
 	token, err := a.oauthConfig.Exchange(context.Background(), code)
 	if err != nil {
 		return nil, fmt.Errorf("failed to exchange token: %w", err)
 	}
+
+	log.Println("Google auth token :", token)
 
 	// Создание HTTP клиента с токеном
 	client := a.oauthConfig.Client(context.Background(), token)

@@ -34,7 +34,7 @@ func LoadConfig() {
 		DbName:            os.Getenv("DB_NAME"),
 		GoogleRedirectURL: os.Getenv("GOOGLE_REDIRECT_URL"),
 		GoogleClientID:    os.Getenv("GOOGLE_CLIENT_ID"),
-		GoogleSecret:      os.Getenv("GOOGLE_SECRET"),
+		GoogleSecret:      os.Getenv("GOOGLE_CLIENT_SECRET"),
 		JWTSecret:         os.Getenv("JWT_SECRET"),
 	}
 }

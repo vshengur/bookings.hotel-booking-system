@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -12,6 +13,12 @@ import (
 type AuthHandler struct {
 	AuthService *services.AuthService
 	UserRepo    repository.UserRepository
+}
+
+// Генерация ссылки для авторизации
+func (h *AuthHandler) Login(c *gin.Context) {
+	authURL := h.AuthService.GenerateAuthURL()
+	c.JSON(http.StatusOK, gin.H{"auth_url": authURL})
 }
 
 func (h *AuthHandler) GoogleCallback(c *gin.Context) {
@@ -26,6 +33,8 @@ func (h *AuthHandler) GoogleCallback(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
+	log.Println("Google user info :", user)
 
 	dbUser := h.UserRepo.FindOrCreate(user)
 	token, err := utils.GenerateJWT(dbUser)
