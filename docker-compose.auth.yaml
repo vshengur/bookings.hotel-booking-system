@@ -1,7 +1,7 @@
 version: '3.9'
 
 services:
-  api-gateway:
+  auth-service:
     build:
       context: .
       dockerfile: Dockerfile
@@ -9,7 +9,7 @@ services:
       - "8080:8080"
     environment:
       - DB_HOST=postgres
-      - DB_PORT=5432
+      - DB_PORT=15432
       - DB_USER=admin
       - DB_PASSWORD=admin
       - DB_NAME=auth_service
@@ -22,7 +22,7 @@ services:
       - booking-system-network
 
   postgres:
-    image: postgres:14
+    image: postgres:17.2
     container_name: postgres
     restart: always
     environment:
@@ -35,6 +35,11 @@ services:
       - booking-system-network
     volumes:
       - postgres-data:/var/lib/postgresql/data
+
+networks:
+  booking-system-network:
+    driver: bridge
+    external: true
 
 volumes:
   postgres-data:
