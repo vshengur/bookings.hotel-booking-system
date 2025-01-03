@@ -26,10 +26,17 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB) {
 		UserRepo: userRepo,
 	}
 
+	healthHandler := handlers.HealthHandler{
+		DB: db,
+	}
+
+	// Health check
+	r.GET("/health", healthHandler.HealthCheck)
+
 	// Новый маршрут для авторизации
-	r.GET("/auth/login", authHandler.Login)
+	r.GET("/login", authHandler.Login)
 	// Callback после авторизации
-	r.GET("/auth/callback", authHandler.GoogleCallback)
+	r.GET("/callback", authHandler.GoogleCallback)
 
 	// CRUD для пользователей
 	r.GET("/users", userHandler.GetAllUsers)
