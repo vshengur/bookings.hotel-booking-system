@@ -13,6 +13,14 @@ func main() {
 	// Загрузка конфигурации
 	config.LoadConfig()
 
+	// Логирование загруженных данных (безопасно для проверки, но не для секрета!)
+	log.Printf("Loaded configuration: %+v\n", config.AppConfig)
+
+	// Использование конфигурации
+	if config.AppConfig.JWTSecret == "" {
+		log.Fatal("JWT Secret is required but not found!")
+	}
+
 	// Подключение к базе данных
 	db := database.ConnectDB()
 	sqlDB, err := db.DB() // Получение *sql.DB из GORM
