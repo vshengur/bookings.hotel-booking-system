@@ -13,8 +13,11 @@ func main() {
 	// Загрузка конфигурации
 	config.LoadConfig()
 
-	// Логирование загруженных данных (безопасно для проверки, но не для секрета!)
-	log.Printf("Loaded configuration: %+v\n", config.AppConfig)
+	log.Println(config.AppConfig.RunMode)
+	if config.AppConfig.RunMode == "dev" {
+		// Логирование загруженных данных (безопасно для проверки, но не для секрета!)
+		log.Printf("Loaded configuration: %+v\n", config.AppConfig)
+	}
 
 	// Использование конфигурации
 	if config.AppConfig.JWTSecret == "" {
@@ -27,6 +30,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to get database instance: %v", err)
 	}
+
 	defer func() {
 		if err := sqlDB.Close(); err != nil {
 			log.Fatalf("Failed to close database connection: %v", err)

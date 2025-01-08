@@ -7,20 +7,37 @@ import (
 	"github.com/spf13/viper"
 )
 
+type ConsulConfig struct {
+	Address string
+	Folder  string
+}
+
+var ConsulConnectionConfig *ConsulConfig
+
+// Загрузка конфигурации Consul
+func LoadConsulServiceConfig() {
+	// Установка значений по умолчанию
+	viper.SetDefault("CONSUL_ADDRESS", "localhost:8500")
+	viper.SetDefault("CONSUL_FOLDER", "config")
+
+	ConsulConnectionConfig = &ConsulConfig{
+		Address: viper.GetString("CONSUL_ADDRESS"),
+		Folder:  viper.GetString("CONSUL_FOLDER"),
+	}
+}
+
 // GetConsulSecret получает секрет из Consul
 func GetConsulSecret(key string) (string, error) {
-	consulAddress := viper.GetString("CONSUL_ADDRESS")
-	consulNamespace := viper.GetString("CONSUL_NAMESPACE")
-
 	// Подключение к Consul
 	client, err := api.NewClient(&api.Config{
-		Address: consulAddress,
+		Address:   ConsulConnectionConfig.Address,
+		Namespace: "",
 	})
 	if err != nil {
 		return "", err
 	}
 
-	kv, _, err := client.KV().Get(consulNamespace+"/"+key, nil)
+	kv, _, err := client.KV().Get(ConsulConnectionConfig.Folder+"/"+key, nil)
 	if err != nil {
 		return "", err
 	}

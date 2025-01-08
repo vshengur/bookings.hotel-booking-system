@@ -9,6 +9,7 @@ import (
 )
 
 type Config struct {
+	RunMode           string
 	DbUser            string
 	DbPassword        string
 	DbHost            string
@@ -18,8 +19,6 @@ type Config struct {
 	GoogleClientID    string
 	GoogleSecret      string
 	JWTSecret         string
-	ConsulAddress     string
-	ConsulNamespace   string
 }
 
 var AppConfig *Config
@@ -34,12 +33,13 @@ func LoadConfig() {
 	// Шаг 2: Чтение из ENV переменных
 	viper.AutomaticEnv()
 
-	// Установка значений по умолчанию
-	viper.SetDefault("CONSUL_ADDRESS", "localhost:8500")
-	viper.SetDefault("CONSUL_NAMESPACE", "config")
+	// Шаг 3: Загрузка конфигурации Consul
+	services.LoadConsulServiceConfig()
 
 	// Чтение из Consul (если не найдено в ENV или .env)
 	AppConfig = &Config{
+		RunMode: getConfigValue("RUN_MODE"),
+
 		DbUser:     getConfigValue("DB_USER"),
 		DbPassword: getConfigValue("DB_PASSWORD"),
 		DbHost:     getConfigValue("DB_HOST"),
@@ -50,9 +50,6 @@ func LoadConfig() {
 		GoogleClientID:    getConfigValue("GOOGLE_CLIENT_ID"),
 		GoogleSecret:      getConfigValue("GOOGLE_CLIENT_SECRET"),
 		JWTSecret:         getConfigValue("JWT_SECRET"),
-
-		ConsulAddress:   viper.GetString("CONSUL_ADDRESS"),
-		ConsulNamespace: viper.GetString("CONSUL_NAMESPACE"),
 	}
 }
 

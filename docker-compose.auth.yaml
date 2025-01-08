@@ -1,5 +1,3 @@
-version: '3.9'
-
 services:
   auth-service:
     build:
@@ -13,10 +11,13 @@ services:
       - DB_USER=admin
       - DB_PASSWORD=admin
       - DB_NAME=auth_service
+      - CONSUL_ADDRESS=${CONSUL_ADDRESS}
+      - CONSUL_FOLDER=${CONSUL_FOLDER}
       - GOOGLE_REDIRECT_URL=${GOOGLE_REDIRECT_URL}
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
       - JWT_SECRET=${JWT_SECRET}
+      - RUN_MODE=${RUN_MODE}
     depends_on:
       - postgres
     networks:
@@ -30,8 +31,6 @@ services:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: admin
       POSTGRES_DB: auth_service
-    ports:
-      - "15432:5432"
     networks:
       - booking-system-network
     volumes:
@@ -39,7 +38,6 @@ services:
 
 networks:
   booking-system-network:
-    driver: bridge
     external: true
 
 volumes:
