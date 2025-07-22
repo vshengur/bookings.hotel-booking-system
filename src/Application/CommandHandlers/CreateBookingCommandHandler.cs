@@ -1,0 +1,54 @@
+using BookingService.Application.Commands;
+using BookingService.Application.Interfaces;
+using BookingService.Application.Pricing;
+using BookingService.Domain.Patterns;
+
+using System;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace BookingService.Application.CommandHandlers
+{
+    public class CreateBookingCommandHandler
+    {
+        private readonly IBookingRepository _repo;
+        private readonly IPricingStrategyProvider _provider;
+
+        public CreateBookingCommandHandler(
+            IBookingRepository repo,
+            IPricingStrategyProvider provider)
+        {
+            _repo = repo;
+            _provider = provider;
+        }
+
+        public async Task<Guid> Handle(CreateBookingCommand cmd, CancellationToken ct = default)
+        {
+            var occupancyPercent = await _repo.GetOccupancyPercentAsync(cmd.CheckIn, cmd.CheckOut);
+
+            var ctx = new PricingContext
+            {
+                CheckIn = cmd.CheckIn,
+                CheckOut = cmd.CheckOut,
+                PromoCode = cmd.PromoCode,
+                OccupancyPercent = occupancyPercent
+            };
+
+            var strategy = await _provider.Resolve(ctx);
+            int nights = cmd.CheckOut.DayNumber - cmd.CheckIn.DayNumber;
+            var total = strategy.Calculate(cmd.BasePrice, nights);
+
+            var booking = new BookingBuilder()
+                .WithRoom(cmd.RoomId)
+                .WithUser(cmd.UserId)
+                .Between(cmd.CheckIn, cmd.CheckOut)
+                .Price(total)
+                .Build();
+
+            await _repo.AddAsync(booking);
+            await _repo.SaveChangesAsync();
+
+            return booking.Id;
+        }
+    }
+}
