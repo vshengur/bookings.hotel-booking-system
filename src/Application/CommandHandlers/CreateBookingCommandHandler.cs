@@ -11,20 +11,20 @@ namespace BookingService.Application.CommandHandlers
 {
     public class CreateBookingCommandHandler
     {
-        private readonly IBookingRepository _repo;
+        private readonly IUnitOfWork _uow;
         private readonly IPricingStrategyProvider _provider;
 
         public CreateBookingCommandHandler(
-            IBookingRepository repo,
+            IUnitOfWork uow,
             IPricingStrategyProvider provider)
         {
-            _repo = repo;
+            _uow = uow;
             _provider = provider;
         }
 
         public async Task<Guid> Handle(CreateBookingCommand cmd, CancellationToken ct = default)
         {
-            var occupancyPercent = await _repo.GetOccupancyPercentAsync(cmd.CheckIn, cmd.CheckOut);
+            var occupancyPercent = await _uow.Bookings.GetOccupancyPercentAsync(cmd.CheckIn, cmd.CheckOut, ct);
 
             var ctx = new PricingContext
             {
@@ -45,8 +45,8 @@ namespace BookingService.Application.CommandHandlers
                 .Price(total)
                 .Build();
 
-            await _repo.AddAsync(booking);
-            await _repo.SaveChangesAsync();
+            await _uow.Bookings.AddAsync(booking);
+            await _uow.SaveChangesAsync();
 
             return booking.Id;
         }

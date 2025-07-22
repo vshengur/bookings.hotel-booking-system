@@ -3,6 +3,7 @@ using BookingService.Application.Pricing;
 using BookingService.Domain.Events;
 using BookingService.Infrastructure.Messaging;
 using BookingService.Infrastructure.Persistence;
+using BookingService.Infrastructure.UoW;
 
 using Hangfire;
 using Hangfire.PostgreSql;
@@ -58,6 +59,8 @@ public static class DependencyInjection
 
         // domain events
         services.AddScoped<IDomainEventDispatcher, MassTransitDomainEventDispatcher>();
+
+        services.AddScoped<IUnitOfWork, EfUnitOfWork>();
 
         return services;
     }
