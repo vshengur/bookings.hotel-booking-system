@@ -24,7 +24,8 @@ namespace BookingService.Application.CommandHandlers
 
         public async Task<Guid> Handle(CreateBookingCommand cmd, CancellationToken ct = default)
         {
-            var occupancyPercent = await _uow.Bookings.GetOccupancyPercentAsync(cmd.CheckIn, cmd.CheckOut, ct);
+            var occupancyPercent = await _uow.Bookings
+                .GetOccupancyPercentAsync(cmd.CheckIn, cmd.CheckOut, ct);
 
             var ctx = new PricingContext
             {
@@ -46,7 +47,7 @@ namespace BookingService.Application.CommandHandlers
                 .Build();
 
             await _uow.Bookings.AddAsync(booking);
-            await _uow.SaveChangesAsync();
+            await _uow.SaveChangesAsync(ct);
 
             return booking.Id;
         }

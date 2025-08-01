@@ -10,7 +10,6 @@ namespace BookingService.Application.Interfaces
     {
         Task<Booking?> GetAsync(Guid id);
         Task AddAsync(Booking booking);
-        Task SaveChangesAsync();
         Task<int> GetOccupancyPercentAsync(DateOnly from, DateOnly to, CancellationToken ct = default);
     }
 }

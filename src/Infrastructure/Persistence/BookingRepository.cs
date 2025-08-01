@@ -32,8 +32,6 @@ namespace BookingService.Infrastructure.Persistence
         }
 
         public Task<Booking?> GetAsync(Guid id) => _context.Bookings.FirstOrDefaultAsync(b => b.Id == id);
-
-        public Task SaveChangesAsync() => _context.SaveChangesAsync();
         
         public async Task<int> GetOccupancyPercentAsync(DateOnly from, DateOnly to, CancellationToken ct = default)
         {

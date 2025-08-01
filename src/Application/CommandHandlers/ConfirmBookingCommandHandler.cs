@@ -3,21 +3,21 @@ using System.Threading.Tasks;
 using System.Threading;
 using BookingService.Application.Commands;
 using BookingService.Application.Interfaces;
-using BookingService.Domain.Entities;
 
 namespace BookingService.Application.CommandHandlers
 {
     public class ConfirmBookingCommandHandler
     {
-        private readonly IBookingRepository _repo;
+        private readonly IUnitOfWork _uow;
 
-        public ConfirmBookingCommandHandler(IBookingRepository repo) => _repo = repo;
+        public ConfirmBookingCommandHandler(IUnitOfWork uow) => _uow = uow;
 
         public async Task Handle(ConfirmBookingCommand command, CancellationToken ct = default)
         {
-            var booking = await _repo.GetAsync(command.BookingId) ?? throw new InvalidOperationException("Booking not found");
+            var booking = await _uow.Bookings.GetAsync(command.BookingId)
+                ?? throw new InvalidOperationException("Booking not found");
             booking.Confirm();
-            await _repo.SaveChangesAsync();
+            await _uow.SaveChangesAsync(ct);
         }
     }
 }

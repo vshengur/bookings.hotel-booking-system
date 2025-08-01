@@ -8,15 +8,16 @@ namespace BookingService.Application.CommandHandlers
 {
     public class CancelBookingCommandHandler
     {
-        private readonly IBookingRepository _repo;
+        private readonly IUnitOfWork _uow;
 
-        public CancelBookingCommandHandler(IBookingRepository repo) => _repo = repo;
+        public CancelBookingCommandHandler(IUnitOfWork uow) => _uow = uow;
 
         public async Task Handle(CancelBookingCommand command, CancellationToken ct = default)
         {
-            var booking = await _repo.GetAsync(command.BookingId) ?? throw new InvalidOperationException("Booking not found");
+            var booking = await _uow.Bookings.GetAsync(command.BookingId)
+                ?? throw new InvalidOperationException("Booking not found");
             booking.Cancel(command.Reason);
-            await _repo.SaveChangesAsync();
+            await _uow.SaveChangesAsync(ct);
         }
     }
 }
