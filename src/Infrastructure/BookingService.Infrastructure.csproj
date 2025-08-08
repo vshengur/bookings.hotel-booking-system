@@ -20,4 +20,9 @@
     <ProjectReference Include="..\Domain\BookingService.Domain.csproj" />
     <ProjectReference Include="..\Application\BookingService.Application.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <Reference Include="Booking.Contracts">
+      <HintPath>..\..\..\..\common\Booking.Contracts\Booking.Contracts\bin\Debug\net9.0\Booking.Contracts.dll</HintPath>
+    </Reference>
+  </ItemGroup>
 </Project>
