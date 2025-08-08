@@ -12,8 +12,10 @@ Desktop.ini
 ###############################################################################
 .vs/                           # Visual Studio 2019/2022
 /.vs/
+**/.vs
 .idea/                         # JetBrains Rider / IntelliJ
 /.idea
+**/.idea/
 .vscode/                       # VS Code
 *.suo
 *.user
@@ -118,5 +120,3 @@ build/
 *.swo
 *.bak
 *~
-/src/.vs
-/src/.idea/.idea.BookingService/.idea
