@@ -2,7 +2,7 @@ using System.Threading.Tasks;
 using MassTransit;
 using BookingService.Application.Commands;
 using BookingService.Application.CommandHandlers;
-using Booking.Contracts;
+using Bookings.Contracts;
 
 namespace BookingService.Infrastructure.Messaging.Consumers
 {
