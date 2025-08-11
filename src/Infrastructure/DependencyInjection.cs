@@ -1,3 +1,5 @@
+using Bookings.Common.Events;
+
 using BookingService.Application.Interfaces;
 using BookingService.Application.Pricing;
 using BookingService.Domain.Events;

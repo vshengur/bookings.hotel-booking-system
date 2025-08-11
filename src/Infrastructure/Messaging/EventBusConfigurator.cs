@@ -1,4 +1,5 @@
-﻿using BookingService.Domain.Common;
+﻿using Bookings.Common;
+
 using BookingService.Infrastructure.Messaging.Consumers;
 using BookingService.Infrastructure.Persistence;
 

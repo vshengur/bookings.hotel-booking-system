@@ -1,5 +1,5 @@
-﻿using BookingService.Domain.Common;
-using BookingService.Domain.Events;
+﻿using Bookings.Common;
+using Bookings.Common.Events;
 
 using MassTransit;
 

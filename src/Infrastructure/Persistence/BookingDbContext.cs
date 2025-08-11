@@ -1,6 +1,7 @@
-﻿using BookingService.Domain.Common;
+﻿using Bookings.Common;
+using Bookings.Common.Events;
+
 using BookingService.Domain.Entities;
-using BookingService.Domain.Events;
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
