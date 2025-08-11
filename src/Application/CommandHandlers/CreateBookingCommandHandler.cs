@@ -7,49 +7,48 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace BookingService.Application.CommandHandlers
+namespace BookingService.Application.CommandHandlers;
+
+public class CreateBookingCommandHandler
 {
-    public class CreateBookingCommandHandler
+    private readonly IUnitOfWork _uow;
+    private readonly IPricingStrategyProvider _provider;
+
+    public CreateBookingCommandHandler(
+        IUnitOfWork uow,
+        IPricingStrategyProvider provider)
     {
-        private readonly IUnitOfWork _uow;
-        private readonly IPricingStrategyProvider _provider;
+        _uow = uow;
+        _provider = provider;
+    }
 
-        public CreateBookingCommandHandler(
-            IUnitOfWork uow,
-            IPricingStrategyProvider provider)
+    public async Task<Guid> Handle(CreateBookingCommand cmd, CancellationToken ct = default)
+    {
+        var occupancyPercent = await _uow.Bookings
+            .GetOccupancyPercentAsync(cmd.CheckIn, cmd.CheckOut, ct);
+
+        var ctx = new PricingContext
         {
-            _uow = uow;
-            _provider = provider;
-        }
+            CheckIn = cmd.CheckIn,
+            CheckOut = cmd.CheckOut,
+            PromoCode = cmd.PromoCode,
+            OccupancyPercent = occupancyPercent
+        };
 
-        public async Task<Guid> Handle(CreateBookingCommand cmd, CancellationToken ct = default)
-        {
-            var occupancyPercent = await _uow.Bookings
-                .GetOccupancyPercentAsync(cmd.CheckIn, cmd.CheckOut, ct);
+        var strategy = await _provider.Resolve(ctx);
+        int nights = cmd.CheckOut.DayNumber - cmd.CheckIn.DayNumber;
+        var total = strategy.Calculate(cmd.BasePrice, nights);
 
-            var ctx = new PricingContext
-            {
-                CheckIn = cmd.CheckIn,
-                CheckOut = cmd.CheckOut,
-                PromoCode = cmd.PromoCode,
-                OccupancyPercent = occupancyPercent
-            };
+        var booking = new BookingBuilder()
+            .WithRoom(cmd.RoomId)
+            .WithUser(cmd.UserId)
+            .Between(cmd.CheckIn, cmd.CheckOut)
+            .Price(total)
+            .Build();
 
-            var strategy = await _provider.Resolve(ctx);
-            int nights = cmd.CheckOut.DayNumber - cmd.CheckIn.DayNumber;
-            var total = strategy.Calculate(cmd.BasePrice, nights);
+        await _uow.Bookings.AddAsync(booking);
+        await _uow.SaveChangesAsync(ct);
 
-            var booking = new BookingBuilder()
-                .WithRoom(cmd.RoomId)
-                .WithUser(cmd.UserId)
-                .Between(cmd.CheckIn, cmd.CheckOut)
-                .Price(total)
-                .Build();
-
-            await _uow.Bookings.AddAsync(booking);
-            await _uow.SaveChangesAsync(ct);
-
-            return booking.Id;
-        }
+        return booking.Id;
     }
 }

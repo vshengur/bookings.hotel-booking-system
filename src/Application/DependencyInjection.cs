@@ -1,5 +1,4 @@
 using BookingService.Application.CommandHandlers;
-using BookingService.Application.Pricing;
 using BookingService.Application.Profiles;
 using BookingService.Domain.Patterns;
 

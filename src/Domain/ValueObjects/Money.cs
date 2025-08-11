@@ -1,4 +1,4 @@
-﻿using BookingService.Domain.Common;
+﻿using Bookings.Common;
 
 namespace BookingService.Domain.ValueObjects;
 

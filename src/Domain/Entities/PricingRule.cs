@@ -1,4 +1,5 @@
-﻿using BookingService.Domain.Common;
+﻿using Bookings.Common;
+
 using BookingService.Domain.Events;
 
 using System;
@@ -8,11 +9,9 @@ namespace BookingService.Domain.Entities;
 public sealed class PricingRule : Entity, IAggregateRoot
 {
     public Guid Id { get; private set; }
-    public string StrategyKey { get; private set; }   // "Seasonal", "Occupancy"…
+    public string StrategyKey { get; private set; }
     public DateOnly? ValidFrom { get; private set; }
     public DateOnly? ValidTo { get; private set; }
-    public int? MinOccupancyPercent { get; private set; }
-    public string? PromoCode { get; private set; }
     public int Priority { get; private set; }
     public bool IsActive { get; private set; }
 
@@ -66,8 +65,6 @@ public sealed class PricingRule : Entity, IAggregateRoot
         StrategyKey = strategyKey ?? StrategyKey;
         ValidFrom = validFrom ?? ValidFrom;
         ValidTo = validTo ?? ValidTo;
-        MinOccupancyPercent = minOccupancyPercent ?? MinOccupancyPercent;
-        PromoCode = promoCode ?? PromoCode;
         Priority = priority ?? Priority;
 
         UpdatedAtUtc = DateTime.UtcNow;

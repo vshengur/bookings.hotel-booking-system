@@ -1,6 +1,7 @@
-using BookingService.Domain.Common;
+using Bookings.Common;
+using Bookings.Common.Exceptions;
+
 using BookingService.Domain.Events;
-using BookingService.Domain.Exceptions;
 using BookingService.Domain.ValueObjects;
 
 using System;

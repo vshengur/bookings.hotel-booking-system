@@ -38,7 +38,7 @@ namespace BookingService.Infrastructure.Persistence
                 e.HasKey(x => x.Id);
                 e.Property(x => x.StrategyKey).IsRequired();
                 e.Property(x => x.Priority).HasDefaultValue(0);
-                e.HasIndex(x => x.PromoCode);
+                e.HasIndex(x => x.ValidFrom);
             });
 
             base.OnModelCreating(mb);
