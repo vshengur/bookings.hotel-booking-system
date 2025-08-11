@@ -36,8 +36,6 @@ public class PricingStrategyProvider : IPricingStrategyProvider
         });
 
         var rule = rules.FirstOrDefault(r =>
-           (r.PromoCode == null || r.PromoCode == ctx.PromoCode) &&
-           (r.MinOccupancyPercent == null || ctx.OccupancyPercent >= r.MinOccupancyPercent) &&
            (r.ValidFrom == null || ctx.CheckIn >= r.ValidFrom) &&
            (r.ValidTo == null || ctx.CheckIn <= r.ValidTo));
 
