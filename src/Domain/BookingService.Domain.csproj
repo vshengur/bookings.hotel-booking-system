@@ -1,14 +1,10 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Bookings.Common">
-      <HintPath>..\..\..\..\common\Booking.Sharing\Booking.Common\bin\Debug\net9.0\Bookings.Common.dll</HintPath>
-    </Reference>
-    <Reference Include="Bookings.Contracts">
-      <HintPath>..\..\..\..\common\Booking.Sharing\Booking.Contracts\bin\Debug\net9.0\Bookings.Contracts.dll</HintPath>
-    </Reference>
+    <PackageReference Include="Bookings.Common" Version="1.0.0" />
+    <PackageReference Include="Bookings.Contracts" Version="1.0.0" />
   </ItemGroup>
 </Project>
