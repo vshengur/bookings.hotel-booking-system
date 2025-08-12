@@ -1,6 +1,5 @@
 using BookingService.Application.CommandHandlers;
 using BookingService.Application.Profiles;
-using BookingService.Domain.Patterns;
 
 using Microsoft.Extensions.DependencyInjection;
 
@@ -20,14 +19,6 @@ public static class DependencyInjection
         services.AddScoped<ConfirmBookingCommandHandler>();
         services.AddScoped<CancelBookingCommandHandler>();
 
-        // Стратегии
-        services.AddScoped<StandardPricingStrategy>();   // базовая
-        services.AddScoped<SeasonalPricingStrategy>();   // «высокий сезон»
-        //services.AddScoped<OccupancyPricingStrategy>();  // от загрузки %
-        //services.AddScoped<DiscountPricingStrategy>();   // промо-код, лояльность
-
-        services.AddTransient<Func<int, OccupancyPricingStrategy>>(sp => percent =>
-            ActivatorUtilities.CreateInstance<OccupancyPricingStrategy>(sp, percent));
         return services;
     }
 }

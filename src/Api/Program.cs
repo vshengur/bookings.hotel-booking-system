@@ -34,6 +34,8 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
+//app.UseSerilogRequestLogging();
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();

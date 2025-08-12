@@ -1,6 +1,8 @@
 using System;
+
+using Bookings.Common.ValueObjects;
+
 using BookingService.Domain.Entities;
-using BookingService.Domain.ValueObjects;
 
 namespace BookingService.Domain.Patterns
 {

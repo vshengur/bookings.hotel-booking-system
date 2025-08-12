@@ -33,7 +33,11 @@ namespace BookingService.Infrastructure.Messaging
                 // ⬇️ Outbox + Retry + DLQ (см. ниже)
                 x.UsingRabbitMq((ctx, cfg) =>
                 {
-                    cfg.Host(rabbitMqHost, "/", h => { });
+                    cfg.Host(rabbitMqHost, "/", h =>
+                    {
+                        h.Username("guest");
+                        h.Password("guest");
+                    });
 
                     // Глобальный Retry (5 попыток, экспонента)
                     cfg.UseMessageRetry(r => r.Exponential(

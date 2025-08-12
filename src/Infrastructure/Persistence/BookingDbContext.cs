@@ -17,7 +17,6 @@ namespace BookingService.Infrastructure.Persistence
         public BookingDbContext(DbContextOptions<BookingDbContext> options) : base(options) { }
 
         public DbSet<Booking> Bookings => Set<Booking>();
-        public DbSet<PricingRule> PricingRules => Set<PricingRule>();
 
         protected override void OnModelCreating(ModelBuilder mb)
         {
@@ -32,14 +31,6 @@ namespace BookingService.Infrastructure.Persistence
                                                 .HasMaxLength(3)
                                                 .HasDefaultValue("EUR");
                 });
-            });
-
-            mb.Entity<PricingRule>(e =>
-            {
-                e.HasKey(x => x.Id);
-                e.Property(x => x.StrategyKey).IsRequired();
-                e.Property(x => x.Priority).HasDefaultValue(0);
-                e.HasIndex(x => x.ValidFrom);
             });
 
             base.OnModelCreating(mb);

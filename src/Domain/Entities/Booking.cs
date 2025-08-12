@@ -1,8 +1,8 @@
 using Bookings.Common;
 using Bookings.Common.Exceptions;
+using Bookings.Common.ValueObjects;
 
 using BookingService.Domain.Events;
-using BookingService.Domain.ValueObjects;
 
 using System;
 

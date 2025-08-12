@@ -67,61 +67,6 @@ namespace BookingService.Infrastructure.Migrations
                     b.ToTable("bookings", (string)null);
                 });
 
-            modelBuilder.Entity("BookingService.Domain.Entities.PricingRule", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<DateTime>("CreatedAtUtc")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at_utc");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("boolean")
-                        .HasColumnName("is_active");
-
-                    b.Property<int?>("MinOccupancyPercent")
-                        .HasColumnType("integer")
-                        .HasColumnName("min_occupancy_percent");
-
-                    b.Property<int>("Priority")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0)
-                        .HasColumnName("priority");
-
-                    b.Property<string>("PromoCode")
-                        .HasColumnType("text")
-                        .HasColumnName("promo_code");
-
-                    b.Property<string>("StrategyKey")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("strategy_key");
-
-                    b.Property<DateTime?>("UpdatedAtUtc")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("updated_at_utc");
-
-                    b.Property<DateOnly?>("ValidFrom")
-                        .HasColumnType("date")
-                        .HasColumnName("valid_from");
-
-                    b.Property<DateOnly?>("ValidTo")
-                        .HasColumnType("date")
-                        .HasColumnName("valid_to");
-
-                    b.HasKey("Id")
-                        .HasName("pk_pricing_rules");
-
-                    b.HasIndex("PromoCode")
-                        .HasDatabaseName("ix_pricing_rules_promo_code");
-
-                    b.ToTable("pricing_rules", (string)null);
-                });
-
             modelBuilder.Entity("BookingService.Domain.Entities.Booking", b =>
                 {
                     b.OwnsOne("BookingService.Domain.ValueObjects.Money", "TotalPrice", b1 =>

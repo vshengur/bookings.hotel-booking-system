@@ -1,8 +1,6 @@
 using Bookings.Common.Events;
 
 using BookingService.Application.Interfaces;
-using BookingService.Application.Pricing;
-using BookingService.Domain.Events;
 using BookingService.Infrastructure.Messaging;
 using BookingService.Infrastructure.Persistence;
 using BookingService.Infrastructure.UoW;
@@ -29,7 +27,6 @@ public static class DependencyInjection
             .UseNpgsql(connectionString)
             .UseSnakeCaseNamingConvention());
         services.AddScoped<IBookingRepository, BookingRepository>();
-        services.AddScoped<IPricingRuleRepository, PricingRuleRepository>();
 
         // MassTransit / RabbitMQ
         services.AddEventBus(rabbitMqHost);
@@ -53,11 +50,6 @@ public static class DependencyInjection
         {
             option.SchedulePollingInterval = TimeSpan.FromSeconds(1);
         });
-
-        // Pricing
-        services.AddMemoryCache();
-        services.AddScoped<IPricingRuleRepository, PricingRuleRepository>();
-        services.AddScoped<IPricingStrategyProvider, PricingStrategyProvider>();
 
         // domain events
         services.AddScoped<IDomainEventDispatcher, MassTransitDomainEventDispatcher>();
