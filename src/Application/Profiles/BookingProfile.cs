@@ -1,6 +1,7 @@
 using AutoMapper;
-using BookingService.Domain.Entities;
+
 using BookingService.Application.DTOs;
+using BookingService.Domain.Aggregates.Booking;
 
 namespace BookingService.Application.Profiles;
 

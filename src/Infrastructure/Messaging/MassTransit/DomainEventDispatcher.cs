@@ -7,13 +7,13 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace BookingService.Infrastructure.Messaging;
+namespace BookingService.Infrastructure.Messaging.MassTransit;
 
-public sealed class MassTransitDomainEventDispatcher : IDomainEventDispatcher
+public sealed class DomainEventDispatcher : IDomainEventDispatcher
 {
     private readonly IPublishEndpoint _publish;
 
-    public MassTransitDomainEventDispatcher(IPublishEndpoint publish) => _publish = publish;
+    public DomainEventDispatcher(IPublishEndpoint publish) => _publish = publish;
 
     public async Task DispatchAsync(IEnumerable<IDomainEvent> events, CancellationToken ct)
     {

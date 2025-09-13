@@ -1,4 +1,4 @@
-using BookingService.Application.CommandHandlers;
+using BookingService.Application.Handlers;
 using BookingService.Application.Profiles;
 
 using Microsoft.Extensions.DependencyInjection;
@@ -14,10 +14,7 @@ public static class DependencyInjection
         // AutoMapper – собираем все профили из сборки Application
         services.AddAutoMapper(_ => { }, typeof(BookingProfile).Assembly);
 
-        // Command-handler’ы
-        services.AddScoped<CreateBookingCommandHandler>();
-        services.AddScoped<ConfirmBookingCommandHandler>();
-        services.AddScoped<CancelBookingCommandHandler>();
+        services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining<ApplicationAssemblyMarker>());
 
         return services;
     }

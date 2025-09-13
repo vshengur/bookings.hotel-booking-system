@@ -1,19 +1,22 @@
 using System;
 using System.Threading.Tasks;
+
 using BookingService.Application.Commands;
-using BookingService.Application.CommandHandlers;
+
+using MassTransit;
 
 namespace BookingService.Infrastructure.Jobs
 {
     public class CancelUnpaidBookingJob
     {
-        private readonly CancelBookingCommandHandler _handler;
+        private readonly IPublishEndpoint _publish;
 
-        public CancelUnpaidBookingJob(CancelBookingCommandHandler handler)
+        public CancelUnpaidBookingJob(IPublishEndpoint publish)
         {
-            _handler = handler;
+            _publish = publish;
         }
 
-        public Task Execute(Guid bookingId, string reason) => _handler.Handle(new CancelBookingCommand(bookingId, reason));
+        public Task Execute(Guid bookingId, string reason) =>
+            _publish.Publish(new CancelBookingCommand(bookingId, reason));
     }
 }

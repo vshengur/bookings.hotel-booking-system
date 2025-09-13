@@ -1,7 +1,9 @@
 ﻿using Bookings.Common;
 using Bookings.Common.Events;
 
-using BookingService.Domain.Entities;
+using BookingService.Domain.Aggregates.Booking;
+
+using MassTransit;
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
@@ -17,6 +19,7 @@ namespace BookingService.Infrastructure.Persistence
         public BookingDbContext(DbContextOptions<BookingDbContext> options) : base(options) { }
 
         public DbSet<Booking> Bookings => Set<Booking>();
+        public DbSet<BookingLineItem> BookingLineItems => Set<BookingLineItem>();
 
         protected override void OnModelCreating(ModelBuilder mb)
         {
@@ -24,14 +27,34 @@ namespace BookingService.Infrastructure.Persistence
             {
                 b.HasKey(e => e.Id);
 
-                b.OwnsOne(e => e.TotalPrice, m =>
-                {
-                    m.Property(p => p.Amount).HasColumnName("total_price");
-                    m.Property(p => p.Currency).HasColumnName("currency")
-                                                .HasMaxLength(3)
-                                                .HasDefaultValue("EUR");
-                });
+                b.Ignore(b => b.TotalPrice);
+
+                b.HasMany(x => x.Items)
+                    .WithOne()
+                    .HasForeignKey(li => li.BookingId).OnDelete(DeleteBehavior.Cascade);
             });
+            mb.Entity<BookingLineItem>(li =>
+            {
+                li.HasKey(e => e.Id);
+
+                li.OwnsOne(e => e.PricePerNight, m =>
+                {
+                    m.Property(p => p.Amount)
+                        .HasColumnName("ppn_amount")
+                        .HasColumnType("numeric(18,2)");
+                    m.Property(p => p.Currency)
+                        .HasColumnName("ppn_currency")
+                        .HasMaxLength(3)
+                        .HasDefaultValue("EUR");
+                });
+
+                li.HasIndex(x => new { x.RoomId, x.BookingId });
+            });
+
+            // ── MassTransit EF Outbox/Inbox ──
+            mb.AddOutboxMessageEntity();
+            mb.AddOutboxStateEntity();
+            mb.AddInboxStateEntity();   // если используете Inbox (идемпотентность потребителей)
 
             base.OnModelCreating(mb);
         }
@@ -44,7 +67,7 @@ namespace BookingService.Infrastructure.Persistence
 
             var result = await base.SaveChangesAsync(ct);
 
-            if (domainEvents.Any())
+            if (domainEvents.Count != 0)
             {
                 var dispatcher = this.GetService<IDomainEventDispatcher>();   // короткий путь
                 await dispatcher.DispatchAsync(domainEvents, ct);

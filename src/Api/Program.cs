@@ -7,22 +7,19 @@ using Hangfire;
 
 using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Host.UseSerilogConfig();
 
-// ───── переменные окружения / .env ─────
-var connStr = builder.Configuration.GetConnectionString("Default");
-var rabbitMqHost = builder.Configuration["RabbitMq:Host"] ?? "localhost";
-
 // ───── Слои ─────
 builder.Services
-        .AddApplication()
-        .AddInfrastructure(connStr!, rabbitMqHost);
+    .AddApplication()
+    .AddInfrastructure(builder.Configuration);
 
 // SignalR
 builder.Services.AddSignalR();
@@ -32,9 +29,11 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+builder.Services.AddHealthChecks();
+
 var app = builder.Build();
 
-//app.UseSerilogRequestLogging();
+app.UseSerilogRequestLogging();
 
 if (app.Environment.IsDevelopment())
 {
@@ -54,5 +53,7 @@ app.UseAuthorization();
 app.MapControllers();
 app.MapHangfireDashboard("/hangfire");
 app.MapHub<BookingService.Api.Hubs.BookingHub>("/hubs/booking");
+
+app.UseHealthChecks("/health");
 
 app.Run();

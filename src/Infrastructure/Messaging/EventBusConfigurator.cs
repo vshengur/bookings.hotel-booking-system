@@ -1,11 +1,16 @@
 ﻿using Bookings.Common;
 
-using BookingService.Infrastructure.Messaging.Consumers;
+using BookingService.Infrastructure.Messaging.MassTransit;
 using BookingService.Infrastructure.Persistence;
 
 using MassTransit;
 
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+
+using MongoDB.Driver.Core.Configuration;
+
+using Polly;
 
 using System;
 
@@ -13,14 +18,20 @@ namespace BookingService.Infrastructure.Messaging
 {
     public static class EventBusConfigurator
     {
-        public static IServiceCollection AddEventBus(this IServiceCollection services, string rabbitMqHost)
+        public static IServiceCollection AddEventBus(this IServiceCollection services, IConfiguration cfg)
         {
             services.AddMassTransit(x =>
             {
-                x.AddConsumer<PaymentConfirmedConsumer>();
-                x.AddConsumer<PaymentFailedConsumer>();
+                var mongoConnection = cfg.GetConnectionString("Mongo") ?? "mongodb://localhost";
+                var mongoBookingCollection = cfg.GetValue<string>("Mongo:Database") ?? "booking_saga";
+                var rabbitMqHost = cfg.GetConnectionString("RabbitMQ") ?? "amqp://rabbitmq";
 
-                // ① Entity-Framework Outbox на уровне конфигурации, а не внутри UsingRabbitMq
+                //var connectionString = new ConnectionString(mongoConnection);
+                //var resolved = await connectionString.ResolveAsync().ConfigureAwait(false);
+
+                x.SetKebabCaseEndpointNameFormatter();
+
+                // Entity-Framework Outbox на уровне конфигурации, а не внутри UsingRabbitMq
                 // Теперь метод распознаётся
                 x.AddEntityFrameworkOutbox<BookingDbContext>(o =>
                 {
@@ -30,30 +41,39 @@ namespace BookingService.Infrastructure.Messaging
                     // o.DisableInboxCleanupService(); // если потребуется отдельная служба чистки
                 });
 
-                // ⬇️ Outbox + Retry + DLQ (см. ниже)
-                x.UsingRabbitMq((ctx, cfg) =>
+                // Outbox + Retry + DLQ (см. ниже)
+                x.UsingRabbitMq((ctx, busCfg) =>
                 {
-                    cfg.Host(rabbitMqHost, "/", h =>
+                    busCfg.Host(new Uri(rabbitMqHost), "/", h =>
                     {
                         h.Username("guest");
                         h.Password("guest");
                     });
 
                     // Глобальный Retry (5 попыток, экспонента)
-                    cfg.UseMessageRetry(r => r.Exponential(
+                    busCfg.UseMessageRetry(r => r.Exponential(
                         retryLimit: 5,
                         minInterval: TimeSpan.FromSeconds(1),
                         maxInterval: TimeSpan.FromSeconds(30),
                         intervalDelta: TimeSpan.FromSeconds(5)));
 
                     // DLX (alternate-exchange) для всех сообщений
-                    cfg.Publish<IDomainEvent>(x =>
+                    busCfg.Publish<IDomainEvent>(x =>
                     {
                         x.SetExchangeArgument("alternate-exchange", "booking-dlx");
                     });
 
-                    cfg.ConfigureEndpoints(ctx);
+                    busCfg.ConfigureEndpoints(ctx);
                 });
+
+                x.AddSagaStateMachine<BookingStateMachine, BookingState>()
+                    //.InMemoryRepository(); // для демо. В проде заменить на MongoDB
+                    .MongoDbRepository(r =>
+                    {
+                        r.Connection = mongoConnection;
+                        r.DatabaseName = mongoBookingCollection;
+                        r.CollectionName = "booking_state";
+                    });
             });
 
             return services;

@@ -1,25 +1,25 @@
 using System;
 
-using Bookings.Common.ValueObjects;
-
-using BookingService.Domain.Entities;
+using BookingService.Domain.Aggregates.Booking;
 
 namespace BookingService.Domain.Patterns
 {
     public class BookingBuilder
     {
-        private Guid _id = Guid.NewGuid();
-        private Guid _roomId;
+        private Guid _id;
         private Guid _userId;
         private DateOnly _checkIn;
         private DateOnly _checkOut;
-        private Money _price;
 
-        public BookingBuilder WithRoom(Guid roomId) { _roomId = roomId; return this; }
-        public BookingBuilder WithUser(Guid userId) { _userId = userId; return this; }
-        public BookingBuilder Between(DateOnly checkIn, DateOnly checkOut) { _checkIn = checkIn; _checkOut = checkOut; return this; }
-        public BookingBuilder Price(decimal price) { _price = new Money(price); return this; }
+        public BookingBuilder WithId(Guid id) { _id = id; return this; }
+        public BookingBuilder ForGuest(Guid userId) { _userId = userId; return this; }
+        public BookingBuilder InPeriod(DateOnly checkIn, DateOnly checkOut)
+        {
+            _checkIn = checkIn;
+            _checkOut = checkOut;
+            return this;
+        }
 
-        public Booking Build() => new(_id, _roomId, _userId, _checkIn, _checkOut, _price);
+        public Booking Build() => new(_id, _userId, _checkIn, _checkOut);
     }
 }

@@ -1,5 +1,5 @@
 ﻿using BookingService.Application.Interfaces;
-using BookingService.Domain.Entities;
+using BookingService.Domain.Aggregates.Booking;
 
 using Microsoft.EntityFrameworkCore;
 
@@ -26,12 +26,14 @@ namespace BookingService.Infrastructure.Persistence
                     attempt => TimeSpan.FromMilliseconds(200 * attempt));
         }
 
-        public async Task AddAsync(Booking booking)
+        public async Task AddAsync(Booking booking, CancellationToken ct = default)
         {
-            await _retryPolicy.ExecuteAsync(() => _context.Bookings.AddAsync(booking).AsTask());
+            await _retryPolicy.ExecuteAsync(() =>
+                _context.Bookings.AddAsync(booking, ct).AsTask());
         }
 
-        public Task<Booking?> GetAsync(Guid id) => _context.Bookings.FirstOrDefaultAsync(b => b.Id == id);
+        public Task<Booking?> GetAsync(Guid id, CancellationToken ct = default) =>
+            _context.Bookings.FirstOrDefaultAsync(b => b.Id == id, ct);
         
         public async Task<int> GetOccupancyPercentAsync(DateOnly from, DateOnly to, CancellationToken ct = default)
         {
@@ -46,6 +48,12 @@ namespace BookingService.Infrastructure.Persistence
                       b.CheckOutDate > from, ct);
 
             return (int)Math.Round((double)overlapped * 100 / total);
+        }
+
+        public Task UpsertAsync(Booking booking, CancellationToken ct = default(CancellationToken))
+        {
+            _context.Bookings.Update(booking);
+            return Task.CompletedTask;
         }
     }
 }

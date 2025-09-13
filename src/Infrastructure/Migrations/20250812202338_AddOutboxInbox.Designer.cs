@@ -3,6 +3,7 @@ using System;
 using BookingService.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,18 +12,20 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace BookingService.Infrastructure.Migrations
 {
     [DbContext(typeof(BookingDbContext))]
-    partial class BookingDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250812202338_AddOutboxInbox")]
+    partial class AddOutboxInbox
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.8")
+                .HasAnnotation("ProductVersion", "9.0.7")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("BookingService.Domain.Aggregates.Booking.Booking", b =>
+            modelBuilder.Entity("BookingService.Domain.Entities.Booking", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -53,6 +56,10 @@ namespace BookingService.Infrastructure.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("guest_id");
 
+                    b.Property<Guid>("RoomId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("room_id");
+
                     b.Property<int>("Status")
                         .HasColumnType("integer")
                         .HasColumnName("status");
@@ -61,45 +68,6 @@ namespace BookingService.Infrastructure.Migrations
                         .HasName("pk_bookings");
 
                     b.ToTable("bookings", (string)null);
-                });
-
-            modelBuilder.Entity("BookingService.Domain.Aggregates.Booking.BookingLineItem", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<int>("Adults")
-                        .HasColumnType("integer")
-                        .HasColumnName("adults");
-
-                    b.Property<Guid>("BookingId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("booking_id");
-
-                    b.Property<int>("Children")
-                        .HasColumnType("integer")
-                        .HasColumnName("children");
-
-                    b.Property<int>("Nights")
-                        .HasColumnType("integer")
-                        .HasColumnName("nights");
-
-                    b.Property<Guid>("RoomId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("room_id");
-
-                    b.HasKey("Id")
-                        .HasName("pk_booking_line_items");
-
-                    b.HasIndex("BookingId")
-                        .HasDatabaseName("ix_booking_line_items_booking_id");
-
-                    b.HasIndex("RoomId", "BookingId")
-                        .HasDatabaseName("ix_booking_line_items_room_id_booking_id");
-
-                    b.ToTable("booking_line_items", (string)null);
                 });
 
             modelBuilder.Entity("MassTransit.EntityFrameworkCoreIntegration.InboxState", b =>
@@ -320,24 +288,17 @@ namespace BookingService.Infrastructure.Migrations
                     b.ToTable("outbox_state", (string)null);
                 });
 
-            modelBuilder.Entity("BookingService.Domain.Aggregates.Booking.BookingLineItem", b =>
+            modelBuilder.Entity("BookingService.Domain.Entities.Booking", b =>
                 {
-                    b.HasOne("BookingService.Domain.Aggregates.Booking.Booking", null)
-                        .WithMany("Items")
-                        .HasForeignKey("BookingId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_booking_line_items_bookings_booking_id");
-
-                    b.OwnsOne("Bookings.Common.ValueObjects.Money", "PricePerNight", b1 =>
+                    b.OwnsOne("Bookings.Common.ValueObjects.Money", "TotalPrice", b1 =>
                         {
-                            b1.Property<Guid>("BookingLineItemId")
+                            b1.Property<Guid>("BookingId")
                                 .HasColumnType("uuid")
                                 .HasColumnName("id");
 
                             b1.Property<decimal>("Amount")
-                                .HasColumnType("numeric(18,2)")
-                                .HasColumnName("ppn_amount");
+                                .HasColumnType("numeric")
+                                .HasColumnName("total_price");
 
                             b1.Property<string>("Currency")
                                 .IsRequired()
@@ -345,18 +306,18 @@ namespace BookingService.Infrastructure.Migrations
                                 .HasMaxLength(3)
                                 .HasColumnType("character varying(3)")
                                 .HasDefaultValue("EUR")
-                                .HasColumnName("ppn_currency");
+                                .HasColumnName("currency");
 
-                            b1.HasKey("BookingLineItemId");
+                            b1.HasKey("BookingId");
 
-                            b1.ToTable("booking_line_items");
+                            b1.ToTable("bookings");
 
                             b1.WithOwner()
-                                .HasForeignKey("BookingLineItemId")
-                                .HasConstraintName("fk_booking_line_items_booking_line_items_id");
+                                .HasForeignKey("BookingId")
+                                .HasConstraintName("fk_bookings_bookings_id");
                         });
 
-                    b.Navigation("PricePerNight")
+                    b.Navigation("TotalPrice")
                         .IsRequired();
                 });
 
@@ -372,11 +333,6 @@ namespace BookingService.Infrastructure.Migrations
                         .HasForeignKey("InboxMessageId", "InboxConsumerId")
                         .HasPrincipalKey("MessageId", "ConsumerId")
                         .HasConstraintName("fk_outbox_message_inbox_state_inbox_message_id_inbox_consumer_");
-                });
-
-            modelBuilder.Entity("BookingService.Domain.Aggregates.Booking.Booking", b =>
-                {
-                    b.Navigation("Items");
                 });
 #pragma warning restore 612, 618
         }
