@@ -10,9 +10,16 @@ public class BookingState : SagaStateMachineInstance, ISagaVersion
 {
     public required Guid CorrelationId { get; set; }
     public int Version { get; set; }
-    public string CurrentState { get; set; } = string.Empty;
+
+    public DateTime Created { get; set; }
+
+    public string? CurrentState { get; set; }
+
     public string? PaymentRef { get; set; }
+    public DateTime? PaymentRefUpdated { get; set; }
+
     public string? PmsNumber { get; set; }
+    public DateTime? PmsNumberUpdated { get; set; }
 
     public Guid? PaymentTimeoutTokenId { get; set; }
 }

@@ -43,7 +43,8 @@ public class BookingStateMachine : MassTransitStateMachine<BookingState>
             x.InsertOnInitial = true;
             x.SetSagaFactory(ctx => new BookingState
             {
-                CorrelationId = ctx.Message.BookingId
+                CorrelationId = ctx.Message.BookingId,
+                Created = DateTime.UtcNow
             });
         });
         Event(() => PaymentAuthorizedEvt, x => x.CorrelateById(m => m.Message.BookingId));
@@ -73,9 +74,9 @@ public class BookingStateMachine : MassTransitStateMachine<BookingState>
                         new ReserveInventoryCommand(ctx.Saga.CorrelationId), ctx.CancellationToken);
                     await mediator.Send(
                         new CreatePaymentCommand(ctx.Saga.CorrelationId), ctx.CancellationToken);
-                    await ctx
-                        .GetPayload<ConsumeContext>()
-                        .Publish(new BookingCreated(b.Id, b.TotalPrice), ctx.CancellationToken);
+                    //await ctx
+                    //    .GetPayload<ConsumeContext>()
+                    //    .Publish(new BookingCreated(b.Id, b.TotalPrice), ctx.CancellationToken);
                 })
                 .Schedule(PaymentTimeout, ctx =>
                     new PaymentTimeoutExpired(ctx.Saga.CorrelationId))
@@ -84,7 +85,10 @@ public class BookingStateMachine : MassTransitStateMachine<BookingState>
 
         During(AwaitingPayment,
             When(PaymentAuthorizedEvt)
-                .Then(ctx => ctx.Saga.PaymentRef = ctx.Message.PaymentProviderRef)
+                .Then(ctx => {
+                    ctx.Saga.PaymentRef = ctx.Message.PaymentProviderRef;
+                    ctx.Saga.PaymentRefUpdated = DateTime.UtcNow;
+                })
                 .ThenAsync(async ctx =>
                 {
                     var mediator = GetRequired<IMediator, PaymentAuthorized>(ctx);
@@ -103,8 +107,7 @@ public class BookingStateMachine : MassTransitStateMachine<BookingState>
                 })
                 .Publish(ctx =>
                     new BookingCancelled(ctx.Saga.CorrelationId, ctx.Message.Error))
-                .TransitionTo(Failed)
-                .Finalize(),
+                .TransitionTo(Failed),
 
             When(PaymentTimeout.Received)
                 .ThenAsync(async ctx => {
@@ -113,18 +116,19 @@ public class BookingStateMachine : MassTransitStateMachine<BookingState>
                 })
                 .Publish(ctx => new CancelBooking(ctx.Saga.CorrelationId, "Payment timeout"))
                 .TransitionTo(Cancelled)
-                .Finalize()
         );
 
         During(Reserved,
             When(PmsConfirmedEvt)
-                .Then(ctx => { ctx.Saga.PmsNumber = ctx.Message.PmsNumber; })
+                .Then(ctx => {
+                    ctx.Saga.PmsNumber = ctx.Message.PmsNumber;
+                    ctx.Saga.PmsNumberUpdated = DateTime.UtcNow;
+                })
                 .ThenAsync(async ctx => {
                     var mediator = GetRequired<IMediator, PmsConfirmed>(ctx);
                     await mediator.Send(new SetBookingStatusCommand(ctx.Saga.CorrelationId, BookingStatus.Confirmed), ctx.CancellationToken);
                 })
-                .TransitionTo(Confirmed)
-                .Finalize(),
+                .TransitionTo(Confirmed),
 
             When(CancelBookingEvt)
                 .ThenAsync(async ctx =>
@@ -134,7 +138,6 @@ public class BookingStateMachine : MassTransitStateMachine<BookingState>
                     await mediator.Send(new SetBookingStatusCommand(ctx.Saga.CorrelationId, BookingStatus.Cancelled), ctx.CancellationToken);
                 })
                 .TransitionTo(Cancelled)
-                .Finalize()
         );
 
         DuringAny(
@@ -146,10 +149,7 @@ public class BookingStateMachine : MassTransitStateMachine<BookingState>
                     await mediator.Send(new SetBookingStatusCommand(ctx.Saga.CorrelationId, BookingStatus.Cancelled), ctx.CancellationToken);
                 })
                 .TransitionTo(Cancelled)
-                .Finalize()
         );
-
-        SetCompletedWhenFinalized();
     }
 
     // Overloads to support contexts with and without TData (Automatonymous BehaviorContext<TSaga> / BehaviorContext<TSaga,TData>)

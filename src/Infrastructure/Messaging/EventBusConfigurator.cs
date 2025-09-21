@@ -26,9 +26,6 @@ namespace BookingService.Infrastructure.Messaging
                 var mongoBookingCollection = cfg.GetValue<string>("Mongo:Database") ?? "booking_saga";
                 var rabbitMqHost = cfg.GetConnectionString("RabbitMQ") ?? "amqp://rabbitmq";
 
-                //var connectionString = new ConnectionString(mongoConnection);
-                //var resolved = await connectionString.ResolveAsync().ConfigureAwait(false);
-
                 x.SetKebabCaseEndpointNameFormatter();
 
                 // Entity-Framework Outbox на уровне конфигурации, а не внутри UsingRabbitMq
