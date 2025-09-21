@@ -48,10 +48,6 @@ public static class DependencyInjection
             .UseNpgsql(postgresConnection)
             .UseSnakeCaseNamingConvention(), poolSize: 256);
 
-        //services.AddDbContext<BookingDbContext>(o => o
-        //    .UseNpgsql(postgresConnection)
-        //    .UseSnakeCaseNamingConvention());
-
         // MassTransit / RabbitMQ
         services.AddEventBus(configuration);
         
