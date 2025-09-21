@@ -7,3 +7,6 @@ public record BookingCreatedDomainEvent(Guid BookingId, Guid GuestId, DateOnly C
 public record BookingPendingPaymentDomainEvent(Guid BookingId) : IDomainEvent;
 public record BookingConfirmedDomainEvent(Guid BookingId) : IDomainEvent;
 public record BookingCancelledDomainEvent(Guid BookingId, string Reason) : IDomainEvent;
+public record BookingFailedDomainEvent(Guid BookingId) : IDomainEvent;
+public record BookingReservedDomainEvent(Guid BookingId) : IDomainEvent;
+public record BookingExpiredDomainEvent(Guid BookingId) : IDomainEvent;

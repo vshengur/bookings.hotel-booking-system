@@ -28,11 +28,7 @@ public sealed class Booking : Entity, IAggregateRoot
 
     private Booking() { } // для ORM
 
-    protected internal Booking(
-        Guid id,
-        Guid guestId,
-        DateOnly checkIn,
-        DateOnly checkOut)
+    protected internal Booking(Guid id, Guid guestId, DateOnly checkIn, DateOnly checkOut)
         :base()
     {
         Id = id;
@@ -46,8 +42,7 @@ public sealed class Booking : Entity, IAggregateRoot
     }
 
     // Factory-метод
-    public static Booking Create(Guid bookingId, Guid guestId,
-                                 DateOnly checkIn, DateOnly checkOut)
+    public static Booking Create(Guid bookingId, Guid guestId, DateOnly checkIn, DateOnly checkOut)
     {
         if (checkIn >= checkOut)
             throw new BusinessRuleException("Check-out must be after check-in");
@@ -79,14 +74,14 @@ public sealed class Booking : Entity, IAggregateRoot
     {
         EnsureState(BookingStatus.AwaitingPayment);
         Status = BookingStatus.Reserved;
-        //AddEvent(new BookingPendingPaymentDomainEvent(Id));
+        AddEvent(new BookingReservedDomainEvent(Id));
     }
 
     public void MarkConfirmed()
     {
         EnsureState(BookingStatus.Reserved);
         Status = BookingStatus.Confirmed;
-        //AddEvent(new BookingPendingPaymentDomainEvent(Id));
+        AddEvent(new BookingConfirmedDomainEvent(Id));
     }
 
     public void MarkCancelled(string reason)
@@ -107,13 +102,13 @@ public sealed class Booking : Entity, IAggregateRoot
     public void MarkFailed()
     {
         Status = BookingStatus.Failed;
-        //AddEvent(new BookingPendingPaymentDomainEvent(Id));
+        AddEvent(new BookingFailedDomainEvent(Id));
     }
 
     public void MarkExpired()
     {
         Status = BookingStatus.Expired;
-        //AddEvent(new BookingPendingPaymentDomainEvent(Id));
+        AddEvent(new BookingExpiredDomainEvent(Id));
     }
 
     private void EnsureState(BookingStatus required)
