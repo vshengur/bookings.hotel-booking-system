@@ -12,12 +12,22 @@ namespace BookingService.Infrastructure.Adapters.Simulated;
 
 public class PaymentGatewaySimulated : IPaymentGateway
 {
-    private readonly IPublishEndpoint _publish;
+    private readonly IBus _bus;
 
-    public PaymentGatewaySimulated(IPublishEndpoint publish) => _publish = publish;
+    public PaymentGatewaySimulated(IBus bus) => _bus = bus;
 
     public Task AuthorizeAsync(Guid bookingId, decimal amount, CancellationToken ct)
-        => _publish.Publish(new PaymentAuthorized(bookingId, $"SIM-{Guid.NewGuid():N}"), ct);
+    {
+        _ = Task.Run(async () =>
+        {
+            // Simulate activity on payment side.
+            await Task.Delay(20000);
+            _ = _bus.Publish(new PaymentAuthorized(bookingId, $"SIM-{Guid.NewGuid():N}"), ct);
+        }, ct);
+
+        return Task.CompletedTask;
+        
+    }
 
     public Task RefundAsync(Guid bookingId, CancellationToken ct)
         => Task.CompletedTask; // симулируем успешный refund

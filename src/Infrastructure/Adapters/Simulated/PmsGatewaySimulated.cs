@@ -13,9 +13,19 @@ namespace BookingService.Infrastructure.Adapters.Simulated;
 
 public class PmsGatewaySimulated : IPmsGateway
 {
-    private readonly IPublishEndpoint _publish;
-    public PmsGatewaySimulated(IPublishEndpoint publish) => _publish = publish;
+    private readonly IBus _bus;
+
+    public PmsGatewaySimulated(IBus bus) => _bus = bus;
 
     public Task RequestConfirmationAsync(Guid bookingId, CancellationToken ct)
-        => _publish.Publish(new PmsConfirmed(bookingId, $"PMS-{Random.Shared.Next(1000, 9999)}"), ct);
+    {
+        _ = Task.Run(async () =>
+        {
+            // Simulate activity on payment side.
+            await Task.Delay(20000);
+            _ = _bus.Publish(new PmsConfirmed(bookingId, $"PMS-{Random.Shared.Next(1000, 9999)}"), ct);
+        }, ct);
+
+        return Task.CompletedTask;
+    }
 }
