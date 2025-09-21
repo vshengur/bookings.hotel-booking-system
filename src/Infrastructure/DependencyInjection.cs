@@ -1,6 +1,5 @@
 using Bookings.Common.Events;
 
-using BookingService.Application;
 using BookingService.Application.Abstractions;
 using BookingService.Application.Interfaces;
 using BookingService.Infrastructure.Adapters.Simulated;
@@ -45,9 +44,13 @@ public static class DependencyInjection
         services.AddScoped<IBookingRepository, BookingRepository>();
         services.AddScoped<IUnitOfWork, EfUnitOfWork>();
 
-        services.AddDbContext<BookingDbContext>(o => o
+        services.AddDbContextPool<BookingDbContext>(o => o
             .UseNpgsql(postgresConnection)
-            .UseSnakeCaseNamingConvention());
+            .UseSnakeCaseNamingConvention(), poolSize: 256);
+
+        //services.AddDbContext<BookingDbContext>(o => o
+        //    .UseNpgsql(postgresConnection)
+        //    .UseSnakeCaseNamingConvention());
 
         // MassTransit / RabbitMQ
         services.AddEventBus(configuration);
