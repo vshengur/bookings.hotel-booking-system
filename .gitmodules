@@ -31,3 +31,6 @@
 [submodule "services/consul"]
 	path = services/consul
 	url = https://github.com/vshengur/bookings.consul.git
+[submodule "services/room-service"]
+	path = services/room-service
+	url = https://github.com/vshengur/bookings.room-service.git
