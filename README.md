@@ -13,6 +13,7 @@ git submodule add https://github.com/vshengur/bookings.notification-frontend.git
 
 git submodule add https://github.com/vshengur/bookings.consul.git services/consul
 git submodule add https://github.com/vshengur/bookings.room-service.git services/room-service
+git submodule add https://github.com/vshengur/bookings.pricing-service.git services/pricing-service
 
 Create docker compose network:
 docker network create booking-net

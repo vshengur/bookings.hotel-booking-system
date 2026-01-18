@@ -34,3 +34,6 @@
 [submodule "services/room-service"]
 	path = services/room-service
 	url = https://github.com/vshengur/bookings.room-service.git
+[submodule "services/pricing-service"]
+	path = services/pricing-service
+	url = https://github.com/vshengur/bookings.pricing-service.git
