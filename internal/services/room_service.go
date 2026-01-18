@@ -26,19 +26,17 @@ type RoomService interface {
 }
 
 type roomService struct {
-	repo            repository.RoomRepository
-	pricingStrategy PricingStrategy
+	repo repository.RoomRepository
 }
 
 // NewRoomService creates a new room service instance
 func NewRoomService(repo repository.RoomRepository) RoomService {
 	return &roomService{
-		repo:            repo,
-		pricingStrategy: NewBasePricingStrategy(), // Strategy pattern
+		repo: repo,
 	}
 }
 
-// CreateRoom creates a new room using Builder pattern
+// CreateRoom creates a new room
 func (s *roomService) CreateRoom(req *models.CreateRoomRequest) (*models.Room, error) {
 	logger.Log.Info("Creating new room", zap.String("room_number", req.RoomNumber))
 
@@ -48,19 +46,17 @@ func (s *roomService) CreateRoom(req *models.CreateRoomRequest) (*models.Room, e
 		return nil, fmt.Errorf("room with number %s already exists", req.RoomNumber)
 	}
 
-	// Build room using Builder pattern
-	builder := NewRoomBuilder()
-	room := builder.
-		WithRoomNumber(req.RoomNumber).
-		WithRoomType(req.RoomType).
-		WithFloor(req.Floor).
-		WithCapacity(req.Capacity).
-		WithBedType(req.BedType).
-		WithSize(req.Size).
-		WithDescription(req.Description).
-		WithBasePrice(req.BasePrice).
-		WithCurrency(req.Currency).
-		Build()
+	// Create room
+	room := &models.Room{
+		RoomNumber:  req.RoomNumber,
+		RoomType:    req.RoomType,
+		Floor:       req.Floor,
+		Capacity:    req.Capacity,
+		BedType:     req.BedType,
+		Size:        req.Size,
+		Description: req.Description,
+		IsActive:    true,
+	}
 
 	// Add amenities
 	for _, amenityReq := range req.Amenities {
@@ -158,12 +154,6 @@ func (s *roomService) UpdateRoom(id int64, req *models.UpdateRoomRequest) (*mode
 	if req.Description != nil {
 		room.Description = *req.Description
 	}
-	if req.BasePrice != nil {
-		room.BasePrice = *req.BasePrice
-	}
-	if req.Currency != nil {
-		room.Currency = *req.Currency
-	}
 	if req.IsActive != nil {
 		room.IsActive = *req.IsActive
 	}
@@ -260,7 +250,7 @@ func (s *roomService) SearchRooms(req *models.SearchRoomsRequest) (*models.Searc
 	return response, nil
 }
 
-// CheckAvailability checks if a room is available and calculates pricing
+// CheckAvailability checks if a room is available
 func (s *roomService) CheckAvailability(req *models.CheckAvailabilityRequest) (*models.AvailabilityResponse, error) {
 	logger.Log.Info("Checking availability",
 		zap.Int64("room_id", req.RoomID),
@@ -272,8 +262,8 @@ func (s *roomService) CheckAvailability(req *models.CheckAvailabilityRequest) (*
 		return nil, fmt.Errorf("checkout date must be after checkin date")
 	}
 
-	// Get room details
-	room, err := s.repo.GetByID(req.RoomID)
+	// Check if room exists
+	_, err := s.repo.GetByID(req.RoomID)
 	if err != nil {
 		return nil, err
 	}
@@ -284,18 +274,11 @@ func (s *roomService) CheckAvailability(req *models.CheckAvailabilityRequest) (*
 		return nil, err
 	}
 
-	// Calculate pricing using Strategy pattern
-	nights := int(req.CheckOut.Sub(req.CheckIn).Hours() / 24)
-	totalPrice := s.pricingStrategy.CalculatePrice(room.BasePrice, nights, req.CheckIn, req.CheckOut)
-
 	response := &models.AvailabilityResponse{
-		RoomID:       room.ID,
-		IsAvailable:  available,
-		CheckIn:      req.CheckIn,
-		CheckOut:     req.CheckOut,
-		PricePerNight: room.BasePrice,
-		TotalPrice:   totalPrice,
-		Currency:     room.Currency,
+		RoomID:      req.RoomID,
+		IsAvailable: available,
+		CheckIn:     req.CheckIn,
+		CheckOut:    req.CheckOut,
 	}
 
 	return response, nil
@@ -366,8 +349,6 @@ func (s *roomService) mapRoomsToResponse(rooms []models.Room) []models.RoomRespo
 			BedType:     room.BedType,
 			Size:        room.Size,
 			Description: room.Description,
-			BasePrice:   room.BasePrice,
-			Currency:    room.Currency,
 			IsActive:    room.IsActive,
 			Amenities:   room.Amenities,
 			Images:      room.Images,

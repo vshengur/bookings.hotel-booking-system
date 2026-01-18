@@ -1,18 +1,19 @@
 -- Seed data for testing
+-- Note: Pricing information has been moved to Pricing Service
 
 -- Insert sample rooms
-INSERT INTO rooms (room_number, room_type, floor, capacity, bed_type, size, description, base_price, currency, is_active)
+INSERT INTO rooms (room_number, room_type, floor, capacity, bed_type, size, description, is_active)
 VALUES
-    ('101', 'single', 1, 1, 'Single Bed', 20.00, 'Cozy single room with city view. Perfect for solo travelers.', 89.99, 'EUR', true),
-    ('102', 'double', 1, 2, 'Double Bed', 25.00, 'Comfortable double room with modern amenities and garden view.', 129.99, 'EUR', true),
-    ('103', 'twin', 1, 2, 'Twin Beds', 25.00, 'Spacious room with two separate beds, ideal for friends or colleagues.', 119.99, 'EUR', true),
-    ('201', 'suite', 2, 3, 'King Bed + Sofa Bed', 45.00, 'Luxurious suite with separate living area, king bed, and stunning city panorama.', 249.99, 'EUR', true),
-    ('202', 'double', 2, 2, 'Queen Bed', 28.00, 'Elegant double room with queen bed and marble bathroom.', 149.99, 'EUR', true),
-    ('203', 'deluxe', 2, 3, 'King Bed + Twin Bed', 40.00, 'Deluxe family room with king bed, twin bed, and balcony.', 199.99, 'EUR', true),
-    ('301', 'penthouse', 3, 4, '2 King Beds', 80.00, 'Exclusive penthouse with panoramic terrace, two bedrooms, and luxury finishes.', 449.99, 'EUR', true),
-    ('302', 'suite', 3, 3, 'King Bed + Sofa Bed', 50.00, 'Premium suite with kitchenette, workspace, and mountain view.', 279.99, 'EUR', true),
-    ('303', 'double', 3, 2, 'King Bed', 30.00, 'Superior double room with king bed and premium amenities.', 169.99, 'EUR', true),
-    ('304', 'single', 3, 1, 'Queen Bed', 22.00, 'Stylish single room with queen bed, perfect for business travelers.', 99.99, 'EUR', true);
+    ('101', 'single', 1, 1, 'Single Bed', 20.00, 'Cozy single room with city view. Perfect for solo travelers.', true),
+    ('102', 'double', 1, 2, 'Double Bed', 25.00, 'Comfortable double room with modern amenities and garden view.', true),
+    ('103', 'twin', 1, 2, 'Twin Beds', 25.00, 'Spacious room with two separate beds, ideal for friends or colleagues.', true),
+    ('201', 'suite', 2, 3, 'King Bed + Sofa Bed', 45.00, 'Luxurious suite with separate living area, king bed, and stunning city panorama.', true),
+    ('202', 'double', 2, 2, 'Queen Bed', 28.00, 'Elegant double room with queen bed and marble bathroom.', true),
+    ('203', 'deluxe', 2, 3, 'King Bed + Twin Bed', 40.00, 'Deluxe family room with king bed, twin bed, and balcony.', true),
+    ('301', 'penthouse', 3, 4, '2 King Beds', 80.00, 'Exclusive penthouse with panoramic terrace, two bedrooms, and luxury finishes.', true),
+    ('302', 'suite', 3, 3, 'King Bed + Sofa Bed', 50.00, 'Premium suite with kitchenette, workspace, and mountain view.', true),
+    ('303', 'double', 3, 2, 'King Bed', 30.00, 'Superior double room with king bed and premium amenities.', true),
+    ('304', 'single', 3, 1, 'Queen Bed', 22.00, 'Stylish single room with queen bed, perfect for business travelers.', true);
 
 -- Insert amenities for Room 101 (Single)
 INSERT INTO room_amenities (room_id, amenity_type, name, description, icon_url)

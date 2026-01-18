@@ -11,8 +11,6 @@ type CreateRoomRequest struct {
 	BedType     string             `json:"bed_type" binding:"max=100"`
 	Size        float64            `json:"size" binding:"min=0"`
 	Description string             `json:"description"`
-	BasePrice   float64            `json:"base_price" binding:"required,min=0"`
-	Currency    string             `json:"currency" binding:"max=3"`
 	Amenities   []AmenityRequest   `json:"amenities"`
 	Images      []RoomImageRequest `json:"images"`
 }
@@ -26,8 +24,6 @@ type UpdateRoomRequest struct {
 	BedType     *string            `json:"bed_type,omitempty" binding:"omitempty,max=100"`
 	Size        *float64           `json:"size,omitempty" binding:"omitempty,min=0"`
 	Description *string            `json:"description,omitempty"`
-	BasePrice   *float64           `json:"base_price,omitempty" binding:"omitempty,min=0"`
-	Currency    *string            `json:"currency,omitempty" binding:"omitempty,max=3"`
 	IsActive    *bool              `json:"is_active,omitempty"`
 	Amenities   []AmenityRequest   `json:"amenities,omitempty"`
 	Images      []RoomImageRequest `json:"images,omitempty"`
@@ -97,8 +93,6 @@ type RoomResponse struct {
 	BedType     string              `json:"bed_type"`
 	Size        float64             `json:"size"`
 	Description string              `json:"description"`
-	BasePrice   float64             `json:"base_price"`
-	Currency    string              `json:"currency"`
 	IsActive    bool                `json:"is_active"`
 	Amenities   []RoomAmenity       `json:"amenities"`
 	Images      []RoomImage         `json:"images"`
@@ -116,14 +110,12 @@ type SearchRoomsResponse struct {
 }
 
 // AvailabilityResponse represents the response for availability check
+// Note: Price information should be retrieved from Pricing Service
 type AvailabilityResponse struct {
-	RoomID       int64     `json:"room_id"`
-	IsAvailable  bool      `json:"is_available"`
-	CheckIn      time.Time `json:"check_in"`
-	CheckOut     time.Time `json:"check_out"`
-	PricePerNight float64  `json:"price_per_night"`
-	TotalPrice   float64   `json:"total_price"`
-	Currency     string    `json:"currency"`
+	RoomID      int64     `json:"room_id"`
+	IsAvailable bool      `json:"is_available"`
+	CheckIn     time.Time `json:"check_in"`
+	CheckOut    time.Time `json:"check_out"`
 }
 
 // ReserveRoomResponse represents the response for room reservation

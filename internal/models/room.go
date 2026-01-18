@@ -5,6 +5,7 @@ import (
 )
 
 // Room represents a hotel room entity
+// Note: Pricing information has been moved to Pricing Service
 type Room struct {
 	ID          int64      `json:"id" gorm:"primaryKey;autoIncrement"`
 	RoomNumber  string     `json:"room_number" gorm:"uniqueIndex;not null;size:50"`
@@ -14,8 +15,6 @@ type Room struct {
 	BedType     string     `json:"bed_type" gorm:"size:100"`
 	Size        float64    `json:"size" gorm:"type:decimal(10,2)"`
 	Description string     `json:"description" gorm:"type:text"`
-	BasePrice   float64    `json:"base_price" gorm:"type:decimal(10,2);not null"`
-	Currency    string     `json:"currency" gorm:"size:3;default:'EUR'"`
 	IsActive    bool       `json:"is_active" gorm:"default:true"`
 	CreatedAt   time.Time  `json:"created_at" gorm:"autoCreateTime"`
 	UpdatedAt   time.Time  `json:"updated_at" gorm:"autoUpdateTime"`
