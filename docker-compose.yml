@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  room-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: room-service
+    ports:
+      - "8083:8083"  # HTTP API
+      - "50053:50053"  # gRPC
+    environment:
+      - SERVER_HOST=0.0.0.0
+      - SERVER_PORT=8083
+      - GRPC_PORT=50053
+      - DB_HOST=room-db
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_NAME=room_service_db
+      - DB_SSL_MODE=disable
+      - CONSUL_HOST=consul
+      - CONSUL_PORT=8500
+      - CONSUL_SERVICE_NAME=room-service
+      - CONSUL_SERVICE_ID=room-service-1
+      - LOG_LEVEL=info
+      - LOG_OUTPUT_PATH=stdout
+    depends_on:
+      - room-db
+    networks:
+      - booking-net
+    restart: unless-stopped
+
+  room-db:
+    image: postgres:16-alpine
+    container_name: room-db
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=room_service_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - room-db-data:/var/lib/postgresql/data
+      - ./migrations:/docker-entrypoint-initdb.d
+    networks:
+      - booking-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  room-db-data:
+    driver: local
+
+networks:
+  booking-net:
+    external: true
