@@ -1,0 +1,93 @@
+version: '3.8'
+
+services:
+  pricing-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pricing-service
+    ports:
+      - "5003:5003"
+      - "5103:5103"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=pricing_db;Username=postgres;Password=${POSTGRES_PASSWORD:-postgres}
+      - Consul__Address=http://consul:8500
+      - Consul__ServiceName=pricing-service
+      - Consul__ServiceId=pricing-service-1
+      - Consul__ServiceAddress=pricing-service
+      - Consul__ServicePort=5003
+    depends_on:
+      postgres:
+        condition: service_healthy
+      consul:
+        condition: service_started
+    networks:
+      - hotel-booking-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5003/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: pricing-postgres
+    environment:
+      - POSTGRES_DB=pricing_db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pricing-postgres-data:/var/lib/postgresql/data
+    networks:
+      - hotel-booking-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  consul:
+    image: consul:1.19
+    container_name: consul
+    command: agent -server -ui -bootstrap-expect=1 -client=0.0.0.0
+    ports:
+      - "8500:8500"
+      - "8600:8600/udp"
+    volumes:
+      - consul-data:/consul/data
+    networks:
+      - hotel-booking-network
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: pricing-prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    networks:
+      - hotel-booking-network
+    restart: unless-stopped
+
+volumes:
+  pricing-postgres-data:
+    driver: local
+  consul-data:
+    driver: local
+  prometheus-data:
+    driver: local
+
+networks:
+  hotel-booking-network:
+    driver: bridge

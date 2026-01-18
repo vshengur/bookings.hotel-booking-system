@@ -1,0 +1,76 @@
+syntax = "proto3";
+
+option csharp_namespace = "PricingService.Grpc";
+
+package pricing;
+
+// Pricing service for inter-service communication
+service PricingGrpc {
+  // Calculate price for a room booking
+  rpc CalculatePrice (CalculatePriceRequest) returns (CalculatePriceResponse);
+
+  // Get room price by room ID
+  rpc GetRoomPrice (GetRoomPriceRequest) returns (RoomPriceResponse);
+
+  // Get all active room prices
+  rpc GetAllActivePrices (GetAllActivePricesRequest) returns (RoomPriceListResponse);
+}
+
+// Request message for price calculation
+message CalculatePriceRequest {
+  int64 room_id = 1;
+  string room_type = 2;
+  string check_in = 3;  // ISO 8601 format
+  string check_out = 4; // ISO 8601 format
+  optional int32 occupancy = 5;
+  optional string promo_code = 6;
+}
+
+// Response message for price calculation
+message CalculatePriceResponse {
+  int64 room_id = 1;
+  string room_type = 2;
+  double base_price = 3;
+  double final_price = 4;
+  double total_price = 5;
+  string currency = 6;
+  int32 nights = 7;
+  string check_in = 8;
+  string check_out = 9;
+  repeated AppliedRule applied_rules = 10;
+  string calculated_at = 11;
+}
+
+// Applied pricing rule
+message AppliedRule {
+  string rule_name = 1;
+  string rule_type = 2;
+  double price_impact = 3;
+  double multiplier = 4;
+}
+
+// Request message for getting room price
+message GetRoomPriceRequest {
+  int64 room_id = 1;
+}
+
+// Response message for room price
+message RoomPriceResponse {
+  int64 id = 1;
+  int64 room_id = 2;
+  string room_type = 3;
+  double base_price = 4;
+  string currency = 5;
+  string valid_from = 6;
+  optional string valid_to = 7;
+  bool is_active = 8;
+}
+
+// Request message for getting all active prices
+message GetAllActivePricesRequest {
+}
+
+// Response message for list of room prices
+message RoomPriceListResponse {
+  repeated RoomPriceResponse prices = 1;
+}
