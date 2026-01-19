@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway
+  namespace: bookings
+spec:
+  replicas: 3 # Количество реплик
+  selector:
+    matchLabels:
+      app: gateway
+  template:
+    metadata:
+      labels:
+        app: gateway
+    spec:
+      containers:
+      - name: gateway
+        image: vshengur/booking-api-gateway-service:latest
+        ports:
+        - containerPort: 80
+        - containerPort: 443
+        env:
+        - name: APP_ENVIRONMENT
+          valueFrom:
+            configMapKeyRef:
+              name: gateway-config
+              key: APP_ENVIRONMENT
+        - name: ASPNETCORE_HTTP_PORTS
+          valueFrom:
+            configMapKeyRef:
+              name: gateway-config
+              key: ASPNETCORE_HTTP_PORTS
+        - name: SEQ_URL
+          valueFrom:
+            configMapKeyRef:
+              name: gateway-config
+              key: SEQ_URL
+        - name: CONSUL_ADDRESS
+          valueFrom:
+            configMapKeyRef:
+              name: gateway-config
+              key: CONSUL_ADDRESS  
+        volumeMounts:
+        # Подключаем appsettings.json из ConfigMap
+        - name: appsettings-volume
+          mountPath: /app/appsettings.json
+          subPath: appsettings.json
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 80
+          initialDelaySeconds: 10
+          periodSeconds: 10
+      restartPolicy: Always
+      volumes:
+      # Подключаем ConfigMap с appsettings.json
+      - name: appsettings-volume
+        configMap:
+          name: gateway-config
