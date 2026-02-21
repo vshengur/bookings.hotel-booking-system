@@ -1,8 +1,11 @@
 ﻿using ApiGateway.Config;
+using ApiGateway.Services;
+
+using System.Net.Http.Headers;
 
 namespace ApiGateway.Middleware;
 
-public class AuthenticationMiddleware(RequestDelegate next, IConfiguration configuration)
+public class AuthenticationMiddleware(RequestDelegate next, IConfiguration configuration, IServiceDiscovery serviceDiscovery)
 {
     private readonly Dictionary<string, bool> _routes = RouteConfigLoader.LoadRoutes(configuration);
 
@@ -33,24 +36,32 @@ public class AuthenticationMiddleware(RequestDelegate next, IConfiguration confi
         }
 
         // Валидация токена
-        /*
-        if (!await ValidateTokenAsync(token))
+        var tokenValidationResponse = await ValidateTokenAsync(token);
+        if (tokenValidationResponse is null)
         {
             context.Response.StatusCode = StatusCodes.Status403Forbidden;
             await context.Response.WriteAsync("Forbidden");
             return;
         }
-        */
+
+        if (!tokenValidationResponse.IsSuccessStatusCode)
+        {
+            context.Response.StatusCode = (int)tokenValidationResponse.StatusCode;
+            await context.Response.WriteAsync(tokenValidationResponse.ReasonPhrase);
+            return;
+        }
 
         // Передаём запрос дальше
         await next(context);
     }
 
-    private static async Task<bool> ValidateTokenAsync(string token)
+    private async Task<HttpResponseMessage> ValidateTokenAsync(string token)
     {
         // Логика валидации токена через Auth-сервис
-        using var httpClient = new HttpClient { BaseAddress = new Uri("http://auth-service:5000") };
-        var response = await httpClient.GetAsync($"/validate?token={token}");
-        return response.IsSuccessStatusCode;
+        var authServiceAddress = await serviceDiscovery.GetServiceAddress("AUTH-SERVICE").ConfigureAwait(false);
+        using var httpClient = new HttpClient {  BaseAddress = new Uri($"http://{authServiceAddress}") };
+        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        var response = await httpClient.GetAsync($"/validate-token");
+        return response;
     }
 }
