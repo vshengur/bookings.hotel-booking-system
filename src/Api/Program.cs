@@ -2,6 +2,7 @@
 using BookingService.Infrastructure;
 using BookingService.Infrastructure.Config;
 using BookingService.Infrastructure.Persistence;
+using BookingService.Api.Middleware;
 
 using Hangfire;
 
@@ -56,6 +57,7 @@ builder.Services.AddHealthChecks();
 var app = builder.Build();
 
 app.UseSerilogRequestLogging();
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 if (app.Environment.IsDevelopment())
 {

@@ -26,6 +26,11 @@ namespace BookingService.Infrastructure.Persistence
             mb.Entity<Booking>(b =>
             {
                 b.HasKey(e => e.Id);
+                b.Property<uint>("xmin")
+                    .HasColumnName("xmin")
+                    .HasColumnType("xid")
+                    .ValueGeneratedOnAddOrUpdate()
+                    .IsConcurrencyToken();
 
                 b.Ignore(b => b.TotalPrice);
 

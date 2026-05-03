@@ -42,11 +42,17 @@ public static class DependencyInjection
             options.Address = new Uri(paymentServiceUrl);
         });
 
+        var roomServiceUrl = configuration["RoomService:Url"] ?? "http://localhost:8081";
+        services.AddHttpClient<RoomServiceInventoryGateway>(client =>
+        {
+            client.BaseAddress = new Uri(roomServiceUrl);
+        });
+
         // Gateways
-        // Используем gRPC клиент для Payment Gateway, остальные пока simulated
+        // Используем gRPC клиент для Payment Gateway, PMS пока simulated
         services.AddScoped<IPaymentGateway, PaymentGatewayGrpc>();
         services.AddScoped<IPmsGateway, PmsGatewaySimulated>();
-        services.AddScoped<IInventoryGateway, InventoryGatewaySimulated>();
+        services.AddScoped<IInventoryGateway>(sp => sp.GetRequiredService<RoomServiceInventoryGateway>());
 
         // ───── переменные окружения / .env ─────
         var postgresConnection = configuration.GetConnectionString("Postgres");

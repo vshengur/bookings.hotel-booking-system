@@ -26,7 +26,7 @@ public sealed class Booking : Entity, IAggregateRoot
     public IReadOnlyCollection<BookingLineItem> Items => new ReadOnlyCollection<BookingLineItem>(_items);
     public Money TotalPrice => _items.Aggregate(Money.Zero(), (acc, li) => acc + li.PricePerNight.Multiply(li.Nights));
 
-    private Booking() { } // для ORM
+    private Booking() { } // пїЅпїЅпїЅ ORM
 
     protected internal Booking(Guid id, Guid guestId, DateOnly checkIn, DateOnly checkOut)
         :base()
@@ -41,7 +41,7 @@ public sealed class Booking : Entity, IAggregateRoot
         AddEvent(new BookingCreatedDomainEvent(Id, GuestId, CheckInDate, CheckOutDate));
     }
 
-    // Factory-метод
+    // Factory-пїЅпїЅпїЅпїЅпїЅ
     public static Booking Create(Guid bookingId, Guid guestId, DateOnly checkIn, DateOnly checkOut)
     {
         if (checkIn >= checkOut)
@@ -52,9 +52,9 @@ public sealed class Booking : Entity, IAggregateRoot
         return new Booking(bookingId, guestId, checkIn, checkOut);
     }
 
-    public void AddLineItem(Guid roomId, int adults, int children, int nights, Money pricePerNight)
+    public void AddLineItem(long roomId, int adults, int children, int nights, Money pricePerNight)
     {
-        if (roomId == Guid.Empty) throw new ArgumentException("RoomId required");
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(roomId);
 
         ArgumentOutOfRangeException.ThrowIfNegative(adults);
         ArgumentOutOfRangeException.ThrowIfNegative(children);

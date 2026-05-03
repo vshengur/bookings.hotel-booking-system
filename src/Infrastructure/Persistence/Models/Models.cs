@@ -24,7 +24,7 @@ public class BookingLineItemEntity
 {
     public long Id { get; set; }
     public Guid BookingId { get; set; }
-    public Guid RoomId { get; set; }
+    public long RoomId { get; set; }
     public int Adults { get; set; }
     public int Children { get; set; }
     public int Nights { get; set; }

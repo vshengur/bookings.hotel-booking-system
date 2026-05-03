@@ -4,4 +4,4 @@ using System;
 
 namespace BookingService.Application.Commands;
 
-public record ConfirmBookingCommand(Guid BookingId) : IRequest;
+public record ReleaseInventoryCommand(Guid BookingId) : IRequest;

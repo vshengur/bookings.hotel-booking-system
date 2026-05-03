@@ -20,8 +20,9 @@ using System.Threading.Tasks;
 namespace BookingService.Api.Controllers
 {
     public record MoneyDto(decimal Amount, string Currency = "EUR");
-    public record BookingLineItemDto(Guid RoomId, int Adults, int Children, int Nights, MoneyDto PricePerNight);
+    public record BookingLineItemDto(long RoomId, int Adults, int Children, int Nights, MoneyDto PricePerNight);
     public record CreateBookingRequest(Guid BookingId, Guid GuestId, DateOnly CheckIn, DateOnly CheckOut, List<BookingLineItemDto> Items, string? PromoCode);
+    public record CancelBookingRequest(string? Reason);
 
     [ApiController]
     [Route("api/[controller]")]
@@ -68,14 +69,44 @@ namespace BookingService.Api.Controllers
         [HttpPost("{id}/confirm")]
         public async Task<IActionResult> Confirm(Guid id)
         {
-            //await _confirmHandler.Handle(new ConfirmBookingCommand(id));
+            var booking = await _repo.GetAsync(id);
+            if (booking is null)
+                return NotFound();
+
+            if (booking.Status != BookingStatus.Reserved)
+            {
+                return Conflict(new ProblemDetails
+                {
+                    Title = "Booking cannot be confirmed",
+                    Detail = $"Booking must be in '{BookingStatus.Reserved}' status before confirmation."
+                });
+            }
+
+            await _sender.Send(new ConfirmBookingCommand(id));
             return NoContent();
         }
 
         [HttpPost("{id}/cancel")]
-        public async Task<IActionResult> Cancel(Guid id, string reason)
+        public async Task<IActionResult> Cancel(Guid id, [FromBody] CancelBookingRequest? request)
         {
-            //await _cancelHandler.Handle(new CancelBookingCommand(id, reason));
+            var booking = await _repo.GetAsync(id);
+            if (booking is null)
+                return NotFound();
+
+            if (booking.Status is BookingStatus.Cancelled or BookingStatus.Confirmed)
+            {
+                return Conflict(new ProblemDetails
+                {
+                    Title = "Booking cannot be cancelled",
+                    Detail = $"Booking in '{booking.Status}' status is already finalised."
+                });
+            }
+
+            var reason = string.IsNullOrWhiteSpace(request?.Reason)
+                ? "Cancelled by user"
+                : request!.Reason!.Trim();
+
+            await _sender.Send(new CancelBookingCommand(id, reason));
             return NoContent();
         }
     }

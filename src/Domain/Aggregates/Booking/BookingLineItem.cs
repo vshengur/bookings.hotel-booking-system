@@ -7,7 +7,7 @@ namespace BookingService.Domain.Aggregates.Booking;
 
 public sealed class BookingLineItem : Entity
 {
-    public BookingLineItem(Guid bookingId, Guid roomId, int adults, int children, int nights, Money pricePerNight)
+    public BookingLineItem(Guid bookingId, long roomId, int adults, int children, int nights, Money pricePerNight)
     {
         Id = Guid.NewGuid();
         BookingId = bookingId;
@@ -22,7 +22,7 @@ public sealed class BookingLineItem : Entity
 
     public Guid Id { get; private set; }
     public Guid BookingId { get; set; }
-    public Guid RoomId { get; private set; }
+    public long RoomId { get; private set; }
     public int Adults { get; private set; }
     public int Children { get; private set; }
     public int Nights { get; private set; }
