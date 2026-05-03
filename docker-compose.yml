@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   pricing-service:
     build:
@@ -11,19 +9,17 @@ services:
       - "5103:5103"
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
-      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=pricing_db;Username=postgres;Password=${POSTGRES_PASSWORD:-postgres}
+      - ConnectionStrings__DefaultConnection=Host=pricing-db;Port=5432;Database=pricing_db;Username=postgres;Password=${POSTGRES_PASSWORD:-postgres}
       - Consul__Address=http://consul:8500
       - Consul__ServiceName=pricing-service
       - Consul__ServiceId=pricing-service-1
       - Consul__ServiceAddress=pricing-service
       - Consul__ServicePort=5003
     depends_on:
-      postgres:
+      pricing-db:
         condition: service_healthy
-      consul:
-        condition: service_started
     networks:
-      - hotel-booking-network
+      - booking-net
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5003/health"]
@@ -32,19 +28,19 @@ services:
       retries: 3
       start_period: 10s
 
-  postgres:
+  pricing-db:
     image: postgres:16-alpine
-    container_name: pricing-postgres
+    container_name: pricing-db
     environment:
       - POSTGRES_DB=pricing_db
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
     ports:
-      - "5432:5432"
+      - "5434:5432"
     volumes:
-      - pricing-postgres-data:/var/lib/postgresql/data
+      - pricing-db-data:/var/lib/postgresql/data
     networks:
-      - hotel-booking-network
+      - booking-net
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
@@ -52,42 +48,10 @@ services:
       timeout: 5s
       retries: 5
 
-  consul:
-    image: consul:1.19
-    container_name: consul
-    command: agent -server -ui -bootstrap-expect=1 -client=0.0.0.0
-    ports:
-      - "8500:8500"
-      - "8600:8600/udp"
-    volumes:
-      - consul-data:/consul/data
-    networks:
-      - hotel-booking-network
-    restart: unless-stopped
-
-  prometheus:
-    image: prom/prometheus:latest
-    container_name: pricing-prometheus
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-    ports:
-      - "9090:9090"
-    volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
-      - prometheus-data:/prometheus
-    networks:
-      - hotel-booking-network
-    restart: unless-stopped
-
 volumes:
-  pricing-postgres-data:
-    driver: local
-  consul-data:
-    driver: local
-  prometheus-data:
+  pricing-db-data:
     driver: local
 
 networks:
-  hotel-booking-network:
-    driver: bridge
+  booking-net:
+    external: true
