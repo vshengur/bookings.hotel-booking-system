@@ -288,7 +288,7 @@ func (s *roomService) CheckAvailability(req *models.CheckAvailabilityRequest) (*
 func (s *roomService) ReserveRoom(req *models.ReserveRoomRequest) (*models.ReserveRoomResponse, error) {
 	logger.Log.Info("Reserving room",
 		zap.Int64("room_id", req.RoomID),
-		zap.Int64("booking_id", req.BookingID))
+		zap.String("booking_reference", req.BookingReference))
 
 	// Validate dates
 	if req.CheckOut.Before(req.CheckIn) || req.CheckOut.Equal(req.CheckIn) {
@@ -298,20 +298,20 @@ func (s *roomService) ReserveRoom(req *models.ReserveRoomRequest) (*models.Reser
 	// Reserve for 15 minutes
 	reservedUntil := time.Now().Add(15 * time.Minute)
 
-	availability, err := s.repo.ReserveRoom(req.RoomID, req.CheckIn, req.CheckOut, req.BookingID, reservedUntil)
+	availability, err := s.repo.ReserveRoom(req.RoomID, req.CheckIn, req.CheckOut, req.BookingReference, reservedUntil)
 	if err != nil {
 		logger.Log.Error("Failed to reserve room", zap.Error(err))
 		return nil, err
 	}
 
 	response := &models.ReserveRoomResponse{
-		ReservationID: availability.ID,
-		RoomID:        availability.RoomID,
-		BookingID:     req.BookingID,
-		CheckIn:       availability.CheckInDate,
-		CheckOut:      availability.CheckOutDate,
-		ReservedUntil: reservedUntil,
-		Status:        availability.Status,
+		ReservationID:    availability.ID,
+		RoomID:           availability.RoomID,
+		BookingReference: req.BookingReference,
+		CheckIn:          availability.CheckInDate,
+		CheckOut:         availability.CheckOutDate,
+		ReservedUntil:    reservedUntil,
+		Status:           availability.Status,
 	}
 
 	logger.Log.Info("Room reserved successfully",
@@ -325,9 +325,9 @@ func (s *roomService) ReserveRoom(req *models.ReserveRoomRequest) (*models.Reser
 func (s *roomService) ReleaseRoom(req *models.ReleaseRoomRequest) error {
 	logger.Log.Info("Releasing room reservation",
 		zap.Int64("room_id", req.RoomID),
-		zap.Int64("booking_id", req.BookingID))
+		zap.String("booking_reference", req.BookingReference))
 
-	if err := s.repo.ReleaseRoom(req.RoomID, req.BookingID); err != nil {
+	if err := s.repo.ReleaseRoom(req.RoomID, req.BookingReference); err != nil {
 		logger.Log.Error("Failed to release room", zap.Error(err))
 		return err
 	}

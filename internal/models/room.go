@@ -66,15 +66,16 @@ func (RoomImage) TableName() string {
 
 // RoomAvailability represents room availability and reservations
 type RoomAvailability struct {
-	ID            int64      `json:"id" gorm:"primaryKey;autoIncrement"`
-	RoomID        int64      `json:"room_id" gorm:"not null;index:idx_room_dates"`
-	CheckInDate   time.Time  `json:"check_in_date" gorm:"not null;index:idx_room_dates"`
-	CheckOutDate  time.Time  `json:"check_out_date" gorm:"not null;index:idx_room_dates"`
-	Status        string     `json:"status" gorm:"not null;size:50;default:'available'"` // available, reserved, blocked, occupied
-	BookingID     *int64     `json:"booking_id,omitempty" gorm:"index"`
-	ReservedUntil *time.Time `json:"reserved_until,omitempty"` // For temporary holds (15 min)
-	CreatedAt     time.Time  `json:"created_at" gorm:"autoCreateTime"`
-	UpdatedAt     time.Time  `json:"updated_at" gorm:"autoUpdateTime"`
+	ID               int64      `json:"id" gorm:"primaryKey;autoIncrement"`
+	RoomID           int64      `json:"room_id" gorm:"not null;index:idx_room_dates"`
+	CheckInDate      time.Time  `json:"check_in_date" gorm:"not null;index:idx_room_dates"`
+	CheckOutDate     time.Time  `json:"check_out_date" gorm:"not null;index:idx_room_dates"`
+	Status           string     `json:"status" gorm:"not null;size:50;default:'available'"` // available, reserved, blocked, occupied
+	BookingID        *int64     `json:"booking_id,omitempty" gorm:"index"`
+	BookingReference *string    `json:"booking_reference,omitempty" gorm:"size:64;index"`
+	ReservedUntil    *time.Time `json:"reserved_until,omitempty"` // For temporary holds (15 min)
+	CreatedAt        time.Time  `json:"created_at" gorm:"autoCreateTime"`
+	UpdatedAt        time.Time  `json:"updated_at" gorm:"autoUpdateTime"`
 }
 
 // TableName specifies the table name for RoomAvailability model
@@ -110,10 +111,10 @@ const (
 
 // Amenity type constants
 const (
-	AmenityTypeBasic       = "basic"
+	AmenityTypeBasic         = "basic"
 	AmenityTypeEntertainment = "entertainment"
-	AmenityTypeBathroom    = "bathroom"
-	AmenityTypeKitchen     = "kitchen"
-	AmenityTypeView        = "view"
+	AmenityTypeBathroom      = "bathroom"
+	AmenityTypeKitchen       = "kitchen"
+	AmenityTypeView          = "view"
 	AmenityTypeAccessibility = "accessibility"
 )

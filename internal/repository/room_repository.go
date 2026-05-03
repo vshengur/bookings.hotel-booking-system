@@ -20,8 +20,8 @@ type RoomRepository interface {
 
 	// Availability methods
 	CheckAvailability(roomID int64, checkIn, checkOut time.Time) (bool, error)
-	ReserveRoom(roomID int64, checkIn, checkOut time.Time, bookingID int64, reservedUntil time.Time) (*models.RoomAvailability, error)
-	ReleaseRoom(roomID int64, bookingID int64) error
+	ReserveRoom(roomID int64, checkIn, checkOut time.Time, bookingReference string, reservedUntil time.Time) (*models.RoomAvailability, error)
+	ReleaseRoom(roomID int64, bookingReference string) error
 	GetAvailabilities(roomID int64, checkIn, checkOut time.Time) ([]models.RoomAvailability, error)
 	CleanupExpiredReservations() error
 }
@@ -203,7 +203,7 @@ func (r *roomRepository) CheckAvailability(roomID int64, checkIn, checkOut time.
 }
 
 // ReserveRoom reserves a room for the given dates
-func (r *roomRepository) ReserveRoom(roomID int64, checkIn, checkOut time.Time, bookingID int64, reservedUntil time.Time) (*models.RoomAvailability, error) {
+func (r *roomRepository) ReserveRoom(roomID int64, checkIn, checkOut time.Time, bookingReference string, reservedUntil time.Time) (*models.RoomAvailability, error) {
 	// First check if the room is available
 	available, err := r.CheckAvailability(roomID, checkIn, checkOut)
 	if err != nil {
@@ -215,12 +215,12 @@ func (r *roomRepository) ReserveRoom(roomID int64, checkIn, checkOut time.Time, 
 
 	// Create reservation
 	availability := &models.RoomAvailability{
-		RoomID:        roomID,
-		CheckInDate:   checkIn,
-		CheckOutDate:  checkOut,
-		Status:        models.AvailabilityStatusReserved,
-		BookingID:     &bookingID,
-		ReservedUntil: &reservedUntil,
+		RoomID:           roomID,
+		CheckInDate:      checkIn,
+		CheckOutDate:     checkOut,
+		Status:           models.AvailabilityStatusReserved,
+		BookingReference: &bookingReference,
+		ReservedUntil:    &reservedUntil,
 	}
 
 	if err := r.db.Create(availability).Error; err != nil {
@@ -231,8 +231,8 @@ func (r *roomRepository) ReserveRoom(roomID int64, checkIn, checkOut time.Time, 
 }
 
 // ReleaseRoom releases a room reservation
-func (r *roomRepository) ReleaseRoom(roomID int64, bookingID int64) error {
-	return r.db.Where("room_id = ? AND booking_id = ?", roomID, bookingID).
+func (r *roomRepository) ReleaseRoom(roomID int64, bookingReference string) error {
+	return r.db.Where("room_id = ? AND booking_reference = ?", roomID, bookingReference).
 		Delete(&models.RoomAvailability{}).Error
 }
 

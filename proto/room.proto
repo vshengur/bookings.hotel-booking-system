@@ -44,7 +44,7 @@ message CheckAvailabilityResponse {
 // Messages for ReserveRoom
 message ReserveRoomRequest {
   int64 room_id = 1;
-  int64 booking_id = 2;
+  string booking_reference = 2;
   google.protobuf.Timestamp check_in = 3;
   google.protobuf.Timestamp check_out = 4;
 }
@@ -52,7 +52,7 @@ message ReserveRoomRequest {
 message ReserveRoomResponse {
   int64 reservation_id = 1;
   int64 room_id = 2;
-  int64 booking_id = 3;
+  string booking_reference = 3;
   google.protobuf.Timestamp check_in = 4;
   google.protobuf.Timestamp check_out = 5;
   google.protobuf.Timestamp reserved_until = 6;
@@ -62,7 +62,7 @@ message ReserveRoomResponse {
 // Messages for ReleaseRoom
 message ReleaseRoomRequest {
   int64 room_id = 1;
-  int64 booking_id = 2;
+  string booking_reference = 2;
 }
 
 message ReleaseRoomResponse {

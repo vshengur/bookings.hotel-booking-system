@@ -71,33 +71,33 @@ type CheckAvailabilityRequest struct {
 
 // ReserveRoomRequest represents the request to reserve a room
 type ReserveRoomRequest struct {
-	RoomID    int64     `json:"room_id" binding:"required"`
-	CheckIn   time.Time `json:"check_in" binding:"required"`
-	CheckOut  time.Time `json:"check_out" binding:"required"`
-	BookingID int64     `json:"booking_id" binding:"required"`
+	RoomID           int64     `json:"room_id" binding:"required"`
+	CheckIn          time.Time `json:"check_in" binding:"required"`
+	CheckOut         time.Time `json:"check_out" binding:"required"`
+	BookingReference string    `json:"booking_reference" binding:"required"`
 }
 
 // ReleaseRoomRequest represents the request to release a room reservation
 type ReleaseRoomRequest struct {
-	RoomID    int64 `json:"room_id" binding:"required"`
-	BookingID int64 `json:"booking_id" binding:"required"`
+	RoomID           int64  `json:"room_id" binding:"required"`
+	BookingReference string `json:"booking_reference" binding:"required"`
 }
 
 // RoomResponse represents the response for a room
 type RoomResponse struct {
-	ID          int64               `json:"id"`
-	RoomNumber  string              `json:"room_number"`
-	RoomType    string              `json:"room_type"`
-	Floor       int                 `json:"floor"`
-	Capacity    int                 `json:"capacity"`
-	BedType     string              `json:"bed_type"`
-	Size        float64             `json:"size"`
-	Description string              `json:"description"`
-	IsActive    bool                `json:"is_active"`
-	Amenities   []RoomAmenity       `json:"amenities"`
-	Images      []RoomImage         `json:"images"`
-	CreatedAt   time.Time           `json:"created_at"`
-	UpdatedAt   time.Time           `json:"updated_at"`
+	ID          int64         `json:"id"`
+	RoomNumber  string        `json:"room_number"`
+	RoomType    string        `json:"room_type"`
+	Floor       int           `json:"floor"`
+	Capacity    int           `json:"capacity"`
+	BedType     string        `json:"bed_type"`
+	Size        float64       `json:"size"`
+	Description string        `json:"description"`
+	IsActive    bool          `json:"is_active"`
+	Amenities   []RoomAmenity `json:"amenities"`
+	Images      []RoomImage   `json:"images"`
+	CreatedAt   time.Time     `json:"created_at"`
+	UpdatedAt   time.Time     `json:"updated_at"`
 }
 
 // SearchRoomsResponse represents the response for room search
@@ -120,13 +120,13 @@ type AvailabilityResponse struct {
 
 // ReserveRoomResponse represents the response for room reservation
 type ReserveRoomResponse struct {
-	ReservationID int64     `json:"reservation_id"`
-	RoomID        int64     `json:"room_id"`
-	BookingID     int64     `json:"booking_id"`
-	CheckIn       time.Time `json:"check_in"`
-	CheckOut      time.Time `json:"check_out"`
-	ReservedUntil time.Time `json:"reserved_until"`
-	Status        string    `json:"status"`
+	ReservationID    int64     `json:"reservation_id"`
+	RoomID           int64     `json:"room_id"`
+	BookingReference string    `json:"booking_reference"`
+	CheckIn          time.Time `json:"check_in"`
+	CheckOut         time.Time `json:"check_out"`
+	ReservedUntil    time.Time `json:"reserved_until"`
+	Status           string    `json:"status"`
 }
 
 // ErrorResponse represents an error response
