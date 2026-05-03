@@ -8,6 +8,7 @@ using System;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
+using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -26,6 +27,35 @@ public class RoomServiceInventoryGateway : IInventoryGateway
         _logger = logger;
     }
 
+    public async Task CheckAvailabilityAsync(long roomId, DateOnly checkIn, DateOnly checkOut, CancellationToken ct)
+    {
+        // RFC3339 with Z required for Go's time.Time query binding
+        var checkInStr = $"{checkIn:yyyy-MM-dd}T00:00:00Z";
+        var checkOutStr = $"{checkOut:yyyy-MM-dd}T00:00:00Z";
+
+        using var response = await _httpClient.GetAsync(
+            $"/api/rooms/{roomId}/availability?checkIn={checkInStr}&checkOut={checkOutStr}",
+            ct);
+
+        if (response.StatusCode == HttpStatusCode.NotFound)
+            throw new InvalidOperationException($"Room {roomId} not found");
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var error = await ReadErrorAsync(response, ct);
+            throw new HttpRequestException(
+                $"Availability check failed for room {roomId}: {error}",
+                null,
+                response.StatusCode);
+        }
+
+        var payload = await response.Content.ReadFromJsonAsync<AvailabilityResponse>(cancellationToken: ct)
+            ?? throw new HttpRequestException($"Availability check returned an empty payload for room {roomId}.");
+
+        if (!payload.IsAvailable)
+            throw new BusinessRuleException($"Room {roomId} is not available for the selected dates.");
+    }
+
     public async Task ReserveAsync(
         Guid bookingId,
         long roomId,
@@ -34,8 +64,8 @@ public class RoomServiceInventoryGateway : IInventoryGateway
         CancellationToken ct)
     {
         var request = new ReserveRoomRequest(
-            checkIn.ToDateTime(TimeOnly.MinValue),
-            checkOut.ToDateTime(TimeOnly.MinValue),
+            $"{checkIn:yyyy-MM-dd}T00:00:00Z",
+            $"{checkOut:yyyy-MM-dd}T00:00:00Z",
             bookingId.ToString());
 
         using var response = await _httpClient.PostAsJsonAsync(
@@ -100,10 +130,19 @@ public class RoomServiceInventoryGateway : IInventoryGateway
             : body;
     }
 
+    // Dates sent as RFC3339 strings so Go's time.Time form/json binding parses correctly
     private sealed record ReserveRoomRequest(
-        DateTime CheckIn,
-        DateTime CheckOut,
-        string BookingReference);
+        [property: JsonPropertyName("check_in")] string CheckIn,
+        [property: JsonPropertyName("check_out")] string CheckOut,
+        [property: JsonPropertyName("booking_reference")] string BookingReference);
 
-    private sealed record ReleaseRoomRequest(string BookingReference);
+    private sealed record ReleaseRoomRequest(
+        [property: JsonPropertyName("booking_reference")] string BookingReference);
+
+    // Go returns snake_case JSON; JsonPropertyName ensures correct deserialization
+    private sealed record AvailabilityResponse(
+        [property: JsonPropertyName("room_id")] long RoomId,
+        [property: JsonPropertyName("is_available")] bool IsAvailable,
+        [property: JsonPropertyName("check_in")] string CheckIn,
+        [property: JsonPropertyName("check_out")] string CheckOut);
 }

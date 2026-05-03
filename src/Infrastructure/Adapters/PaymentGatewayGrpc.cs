@@ -46,8 +46,8 @@ public class PaymentGatewayGrpc : IPaymentGateway
                 CustomerEmail = $"{booking.GuestId}@guest.local", // TODO: получать реальный email из guest service
                 Amount = new Money
                 {
-                    Currency = "USD", // TODO: получать из конфигурации или из booking
-                    AmountMinor = (long)(amount * 100) // конвертируем в минорные единицы (центы)
+                    Currency = booking.TotalPrice.Currency,
+                    AmountMinor = (long)(amount * 100)
                 }
             };
 
