@@ -5,7 +5,10 @@ using BookingService.Infrastructure.Persistence;
 
 using Hangfire;
 
+using HealthChecks.UI.Client;
+
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -63,7 +66,8 @@ if (app.Environment.IsDevelopment())
 // ───── применяем миграции ─────
 using (var scope = app.Services.CreateScope())
 {
-    var ctx = scope.ServiceProvider.GetRequiredService<BookingDbContext>();
+    var factory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<BookingDbContext>>();
+    var ctx = await factory.CreateDbContextAsync();
     ctx.Database.Migrate();
 }
 
@@ -73,6 +77,6 @@ app.MapControllers();
 app.MapHangfireDashboard("/hangfire");
 app.MapHub<BookingService.Api.Hubs.BookingHub>("/hubs/booking");
 
-app.UseHealthChecks("/health");
+app.UseHealthChecks("/health", new HealthCheckOptions { ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse });
 
 app.Run();

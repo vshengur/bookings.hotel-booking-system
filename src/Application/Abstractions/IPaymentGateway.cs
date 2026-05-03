@@ -9,6 +9,6 @@ namespace BookingService.Application.Abstractions;
 
 public interface IPaymentGateway
 {
-    Task AuthorizeAsync(Guid bookingId, decimal amount, CancellationToken ct);
+    Task CreateIntentAsync(Guid bookingId, decimal amount, CancellationToken ct);
     Task RefundAsync(Guid bookingId, CancellationToken ct);
 }

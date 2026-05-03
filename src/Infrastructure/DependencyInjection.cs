@@ -2,6 +2,7 @@ using Bookings.Common.Events;
 
 using BookingService.Application.Abstractions;
 using BookingService.Application.Interfaces;
+using BookingService.Infrastructure.Adapters;
 using BookingService.Infrastructure.Adapters.Simulated;
 using BookingService.Infrastructure.Messaging;
 using BookingService.Infrastructure.Messaging.MassTransit;
@@ -16,6 +17,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 using MongoDB.Driver;
+
+using PaymentService.Contracts.Grpc.V1;
 
 using System;
 
@@ -32,8 +35,16 @@ public static class DependencyInjection
 
         services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining<InfrastructureAssemblyMarker>());
 
-        // Gateways (simulated). В проде заменить на реальные HTTP/gRPC/Bus-адаптеры
-        services.AddScoped<IPaymentGateway, PaymentGatewaySimulated>();
+        // ───── gRPC клиент для Payment Service ─────
+        var paymentServiceUrl = configuration["PaymentService:Url"] ?? "http://localhost:60400";
+        services.AddGrpcClient<PaymentService.Contracts.Grpc.V1.PaymentService.PaymentServiceClient>(options =>
+        {
+            options.Address = new Uri(paymentServiceUrl);
+        });
+
+        // Gateways
+        // Используем gRPC клиент для Payment Gateway, остальные пока simulated
+        services.AddScoped<IPaymentGateway, PaymentGatewayGrpc>();
         services.AddScoped<IPmsGateway, PmsGatewaySimulated>();
         services.AddScoped<IInventoryGateway, InventoryGatewaySimulated>();
 
@@ -44,9 +55,9 @@ public static class DependencyInjection
         services.AddScoped<IBookingRepository, BookingRepository>();
         services.AddScoped<IUnitOfWork, EfUnitOfWork>();
 
-        services.AddDbContextPool<BookingDbContext>(o => o
+        services.AddDbContextFactory<BookingDbContext>(o => o
             .UseNpgsql(postgresConnection)
-            .UseSnakeCaseNamingConvention(), poolSize: 256);
+            .UseSnakeCaseNamingConvention(), lifetime: ServiceLifetime.Scoped);
 
         // MassTransit / RabbitMQ
         services.AddEventBus(configuration);

@@ -16,7 +16,7 @@ public class PaymentGatewaySimulated : IPaymentGateway
 
     public PaymentGatewaySimulated(IBus bus) => _bus = bus;
 
-    public Task AuthorizeAsync(Guid bookingId, decimal amount, CancellationToken ct)
+    public Task CreateIntentAsync(Guid bookingId, decimal amount, CancellationToken ct)
     {
         _ = Task.Run(async () =>
         {

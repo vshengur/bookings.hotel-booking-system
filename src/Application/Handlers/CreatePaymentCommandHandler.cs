@@ -28,6 +28,6 @@ public class CreatePaymentCommandHandler : IRequestHandler<CreatePaymentCommand>
         var booking = await _uow.Bookings.GetAsync(r.BookingId, ct)
             ?? throw new InvalidOperationException($"Booking {r.BookingId} not found");
 
-        await _pay.AuthorizeAsync(booking.Id, booking.TotalPrice.Amount, ct);
+        await _pay.CreateIntentAsync(booking.Id, booking.TotalPrice.Amount, ct);
     }
 }
