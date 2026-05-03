@@ -1,5 +1,7 @@
 using System;
 
+using BookingService.Domain.Aggregates.Booking;
+
 namespace BookingService.Application.DTOs;
 
 public record BookingDto
@@ -9,6 +11,6 @@ public record BookingDto
     public Guid GuestId { get; init; }
     public DateOnly CheckIn { get; init; }
     public DateOnly CheckOut { get; init; }
-    public string TotalPrice { get; init; }
-    public string Status { get; init; } = default!;
+    public string TotalPrice { get; init; } = default!;
+    public BookingStatus Status { get; init; }
 }

@@ -54,7 +54,9 @@ namespace BookingService.Infrastructure.Migrations
                         .HasColumnName("guest_id");
 
                     b.Property<int>("Status")
-                        .HasColumnType("integer")
+                        .HasConversion<string>()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
                         .HasColumnName("status");
 
                     b.Property<uint>("xmin")

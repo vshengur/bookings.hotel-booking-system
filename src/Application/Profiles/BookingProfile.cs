@@ -15,7 +15,6 @@ public class BookingProfile : Profile
             .ForMember(d => d.RoomId, opt => opt.MapFrom(s => s.Items.Select(i => i.RoomId).FirstOrDefault()))
             .ForMember(d => d.CheckIn, opt => opt.MapFrom(s => s.CheckInDate))
             .ForMember(d => d.CheckOut, opt => opt.MapFrom(s => s.CheckOutDate))
-            .ForMember(d => d.Status, opt => opt.MapFrom(s => s.Status.ToString()))
             .ForMember(d => d.TotalPrice, opt => opt.MapFrom(s => $"{s.TotalPrice.Amount} {s.TotalPrice.Currency}"));
     }
 }

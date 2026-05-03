@@ -32,6 +32,10 @@ namespace BookingService.Infrastructure.Persistence
                     .ValueGeneratedOnAddOrUpdate()
                     .IsConcurrencyToken();
 
+                b.Property(x => x.Status)
+                    .HasConversion<string>()
+                    .HasMaxLength(50);
+
                 b.Ignore(b => b.TotalPrice);
 
                 b.HasMany(x => x.Items)
