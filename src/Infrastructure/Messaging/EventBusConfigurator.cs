@@ -27,6 +27,7 @@ namespace BookingService.Infrastructure.Messaging
                 var rabbitMqHost = cfg.GetConnectionString("RabbitMQ") ?? "amqp://rabbitmq";
 
                 x.SetKebabCaseEndpointNameFormatter();
+                x.AddConsumer<PaymentStatusChangedConsumer>();
 
                 // Entity-Framework Outbox на уровне конфигурации, а не внутри UsingRabbitMq
                 // Теперь метод распознаётся

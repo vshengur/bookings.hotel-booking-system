@@ -8,6 +8,9 @@ namespace BookingService.Infrastructure.Adapters.Simulated;
 
 public class InventoryGatewaySimulated : IInventoryGateway
 {
+    public Task CheckAvailabilityAsync(long roomId, DateOnly checkIn, DateOnly checkOut, CancellationToken ct)
+        => Task.CompletedTask;
+
     public Task ReserveAsync(Guid bookingId, long roomId, DateOnly checkIn, DateOnly checkOut, CancellationToken ct)
         => Task.CompletedTask;
 
