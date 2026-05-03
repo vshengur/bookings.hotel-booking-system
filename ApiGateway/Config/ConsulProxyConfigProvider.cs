@@ -15,11 +15,12 @@ public class ConsulProxyConfigProvider(IConsulClient consulClient) : IProxyConfi
 {
     public IProxyConfig GetConfig()
     {
-        // Получаем список сервисов из Consul
-        var services = consulClient.Agent.Services().Result.Response;
+        // Только сервисы, явно зарегистрировавшие маршрутный prefix в Consul metadata
+        var proxied = consulClient.Agent.Services().Result.Response.Values
+            .Where(s => s.Meta.ContainsKey("prefix"))
+            .ToList();
 
-        // Формируем маршруты и кластеры для YARP
-        var routes = services.Values.Select(service => new RouteConfig
+        var routes = proxied.Select(service => new RouteConfig
         {
             RouteId = service.ID,
             ClusterId = $"{service.ID}-cluster",
@@ -34,7 +35,7 @@ public class ConsulProxyConfigProvider(IConsulClient consulClient) : IProxyConfi
             ]
         }).ToList();
 
-        var clusters = services.Values.Select(service => new ClusterConfig
+        var clusters = proxied.Select(service => new ClusterConfig
         {
             ClusterId = $"{service.ID}-cluster",
             Destinations = new Dictionary<string, DestinationConfig>
