@@ -12,12 +12,10 @@ namespace PricingService.Controllers;
 public class PricingRulesController : ControllerBase
 {
     private readonly IPricingRuleService _pricingRuleService;
-    private readonly ILogger<PricingRulesController> _logger;
 
-    public PricingRulesController(IPricingRuleService pricingRuleService, ILogger<PricingRulesController> logger)
+    public PricingRulesController(IPricingRuleService pricingRuleService)
     {
         _pricingRuleService = pricingRuleService;
-        _logger = logger;
     }
 
     /// <summary>
@@ -66,16 +64,8 @@ public class PricingRulesController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<PricingRuleDto>> Create([FromBody] CreatePricingRuleRequest request)
     {
-        try
-        {
-            var result = await _pricingRuleService.CreateAsync(request);
-            return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error creating pricing rule");
-            return BadRequest(new { error = ex.Message });
-        }
+        var result = await _pricingRuleService.CreateAsync(request);
+        return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
     }
 
     /// <summary>

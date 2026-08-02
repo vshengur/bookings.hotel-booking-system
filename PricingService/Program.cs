@@ -2,6 +2,7 @@ using Prometheus;
 using Serilog;
 using PricingService.Application;
 using PricingService.Infrastructure;
+using PricingService.Middleware;
 using PricingService.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -18,8 +19,7 @@ builder.Host.UseSerilog();
 
 // Add services to the container
 builder.Services.AddControllers();
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddOpenApi();
 
 // Add gRPC
 builder.Services.AddGrpc();
@@ -37,12 +37,12 @@ var app = builder.Build();
 // Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    app.MapOpenApi();
 }
 
 // Use Serilog request logging
 app.UseSerilogRequestLogging();
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 // Prometheus metrics middleware
 app.UseMetricServer();

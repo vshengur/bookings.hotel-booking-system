@@ -12,12 +12,10 @@ namespace PricingService.Controllers;
 public class PricingController : ControllerBase
 {
     private readonly IPricingService _pricingService;
-    private readonly ILogger<PricingController> _logger;
 
-    public PricingController(IPricingService pricingService, ILogger<PricingController> logger)
+    public PricingController(IPricingService pricingService)
     {
         _pricingService = pricingService;
-        _logger = logger;
     }
 
     /// <summary>
@@ -29,21 +27,8 @@ public class PricingController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<PriceCalculationResponse>> CalculatePrice([FromBody] PriceCalculationRequest request)
     {
-        try
-        {
-            var response = await _pricingService.CalculatePriceAsync(request);
-            return Ok(response);
-        }
-        catch (InvalidOperationException ex)
-        {
-            _logger.LogWarning(ex, "Invalid operation while calculating price");
-            return NotFound(new { error = ex.Message });
-        }
-        catch (ArgumentException ex)
-        {
-            _logger.LogWarning(ex, "Invalid argument while calculating price");
-            return BadRequest(new { error = ex.Message });
-        }
+        var response = await _pricingService.CalculatePriceAsync(request);
+        return Ok(response);
     }
 
     /// <summary>
@@ -81,16 +66,8 @@ public class PricingController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<RoomPriceDto>> CreateRoomPrice([FromBody] CreateRoomPriceRequest request)
     {
-        try
-        {
-            var result = await _pricingService.CreateRoomPriceAsync(request);
-            return CreatedAtAction(nameof(GetRoomPrice), new { roomId = result.RoomId }, result);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error creating room price");
-            return BadRequest(new { error = ex.Message });
-        }
+        var result = await _pricingService.CreateRoomPriceAsync(request);
+        return CreatedAtAction(nameof(GetRoomPrice), new { roomId = result.RoomId }, result);
     }
 
     /// <summary>
