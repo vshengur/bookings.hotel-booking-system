@@ -1,0 +1,19 @@
+# Secrets - NEVER commit!
+.env
+.env.local
+.env.*.local
+*.env
+
+# Except example files
+!.env.example
+
+# Consul data
+consul-data/
+consul-config/
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.swp
