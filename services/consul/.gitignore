@@ -1,0 +1,10 @@
+# Consul data
+consul-data/
+
+# Secrets - never commit!
+secrets.env
+secrets.*.env
+!secrets.env.example
+
+# Logs
+*.log

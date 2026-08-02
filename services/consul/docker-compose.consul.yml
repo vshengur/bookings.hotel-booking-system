@@ -1,0 +1,49 @@
+services:
+  consul:
+    image: hashicorp/consul:latest
+    container_name: consul
+    ports:
+      - "8500:8500"  # HTTP интерфейс Consul
+      - "8600:8600/udp"  # DNS порт Consul
+    environment:
+      - CONSUL_BIND_INTERFACE=eth0
+    volumes:
+      - ./consul-data:/consul/data
+      - ./consul-config:/consul/config
+    networks:
+      - booking-system-network
+    healthcheck:
+      test: ["CMD", "consul", "members"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  consul-init:
+    image: alpine:latest
+    container_name: consul-init
+    depends_on:
+      consul:
+        condition: service_healthy
+    env_file:
+      - secrets.env
+    environment:
+      - CONSUL_FOLDER=config
+    volumes:
+      - ./consul-config:/scripts
+    networks:
+      - booking-system-network
+    entrypoint: ["/bin/sh"]
+    command:
+      - -c
+      - |
+        apk add --no-cache curl jq openssl
+        chmod +x /scripts/init-secrets.sh
+        /scripts/init-secrets.sh
+
+volumes:
+  consul-data:
+  consul-config:
+
+networks:
+  booking-system-network:
+    external: true
