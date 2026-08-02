@@ -28,13 +28,14 @@ namespace BookingService.Infrastructure.Messaging
 
                 x.SetKebabCaseEndpointNameFormatter();
                 x.AddConsumer<PaymentStatusChangedConsumer>();
+                x.AddHangfireConsumers();
 
                 // Entity-Framework Outbox на уровне конфигурации, а не внутри UsingRabbitMq
                 // Теперь метод распознаётся
                 x.AddEntityFrameworkOutbox<BookingDbContext>(o =>
                 {
                     o.UsePostgres();
-                    o.QueryDelay = TimeSpan.FromSeconds(10);
+                    o.QueryDelay = TimeSpan.FromSeconds(1);
                     o.UseBusOutbox();
                     // o.DisableInboxCleanupService(); // если потребуется отдельная служба чистки
                 });
@@ -60,6 +61,9 @@ namespace BookingService.Infrastructure.Messaging
                     {
                         x.SetExchangeArgument("alternate-exchange", "booking-dlx");
                     });
+
+                    // Hangfire scheduler — обрабатывает отложенные сообщения (в т.ч. PaymentTimeout)
+                    busCfg.UseMessageScheduler(new Uri("queue:hangfire"));
 
                     busCfg.ConfigureEndpoints(ctx);
                 });

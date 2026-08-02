@@ -4,6 +4,10 @@ using BookingService.Infrastructure.Config;
 using BookingService.Infrastructure.Persistence;
 using BookingService.Api.Middleware;
 
+using MongoDB.Bson;
+using MongoDB.Bson.Serialization;
+using MongoDB.Bson.Serialization.Serializers;
+
 using Hangfire;
 
 using HealthChecks.UI.Client;
@@ -19,6 +23,10 @@ using Serilog;
 
 using System.Collections.Generic;
 using System.Net;
+
+// MongoDB driver 3.x requires an explicit GUID representation.
+// Register it globally before any MongoDB code runs.
+BsonSerializer.TryRegisterSerializer(new GuidSerializer(GuidRepresentation.Standard));
 
 var builder = WebApplication.CreateBuilder(args);
 

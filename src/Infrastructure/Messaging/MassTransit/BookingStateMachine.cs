@@ -1,6 +1,7 @@
 ﻿using Bookings.Common.ValueObjects;
 using Bookings.Contracts;
 
+using BookingService.Application;
 using BookingService.Application.Commands;
 using BookingService.Application.Interfaces;
 using BookingService.Domain.Aggregates.Booking;
@@ -54,7 +55,7 @@ public class BookingStateMachine : MassTransitStateMachine<BookingState>
 
         Schedule(() => PaymentTimeout, x => x.PaymentTimeoutTokenId, s =>
         {
-            s.Delay = TimeSpan.FromMinutes(15);
+            s.Delay = BookingConstants.PaymentTimeout;
             s.Received = e => e.CorrelateById(m => m.Message.BookingId);
         });
 
@@ -63,10 +64,6 @@ public class BookingStateMachine : MassTransitStateMachine<BookingState>
                 .ThenAsync(async ctx =>
                 {
                     var mediator = GetRequired<IMediator, CreateBooking>(ctx);
-                    var repo = GetRequired<IBookingRepository, CreateBooking>(ctx);
-
-                    var b = await repo.GetAsync(ctx.Saga.CorrelationId) 
-                        ?? throw new InvalidOperationException($"Booking {ctx.Saga.CorrelationId} not found");
 
                     await mediator.Send(
                         new SetBookingStatusCommand(ctx.Saga.CorrelationId, BookingStatus.AwaitingPayment), ctx.CancellationToken);
@@ -74,12 +71,8 @@ public class BookingStateMachine : MassTransitStateMachine<BookingState>
                         new ReserveInventoryCommand(ctx.Saga.CorrelationId), ctx.CancellationToken);
                     await mediator.Send(
                         new CreatePaymentCommand(ctx.Saga.CorrelationId), ctx.CancellationToken);
-                    //await ctx
-                    //    .GetPayload<ConsumeContext>()
-                    //    .Publish(new BookingCreated(b.Id, b.TotalPrice), ctx.CancellationToken);
                 })
-                .Schedule(PaymentTimeout, ctx =>
-                    new PaymentTimeoutExpired(ctx.Saga.CorrelationId))
+                .Schedule(PaymentTimeout, ctx => new PaymentTimeoutExpired(ctx.Saga.CorrelationId))
                 .TransitionTo(AwaitingPayment)
         );
 
@@ -107,12 +100,16 @@ public class BookingStateMachine : MassTransitStateMachine<BookingState>
                 })
                 .Publish(ctx =>
                     new BookingCancelled(ctx.Saga.CorrelationId, ctx.Message.Error))
+                .Unschedule(PaymentTimeout)
                 .TransitionTo(Failed),
 
             When(PaymentTimeout.Received)
-                .ThenAsync(async ctx => {
+                .ThenAsync(async ctx =>
+                {
                     var mediator = GetRequired<IMediator>(ctx);
-                    await mediator.Send(new SetBookingStatusCommand(ctx.Saga.CorrelationId, BookingStatus.Expired), ctx.CancellationToken);
+                    await mediator.Send(
+                        new SetBookingStatusCommand(ctx.Saga.CorrelationId, BookingStatus.Expired),
+                        ctx.CancellationToken);
                 })
                 .Publish(ctx => new CancelBooking(ctx.Saga.CorrelationId, "Payment timeout"))
                 .TransitionTo(Cancelled)

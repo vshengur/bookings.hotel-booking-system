@@ -7,6 +7,8 @@ using Polly;
 using Polly.Retry;
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -33,7 +35,22 @@ namespace BookingService.Infrastructure.Persistence
         }
 
         public Task<Booking?> GetAsync(Guid id, CancellationToken ct = default) =>
-            _context.Bookings.FirstOrDefaultAsync(b => b.Id == id, ct);
+            _context.Bookings
+                .Include(b => b.Items)
+                .FirstOrDefaultAsync(b => b.Id == id, ct);
+
+        public async Task<IReadOnlyList<Booking>> GetByGuestAsync(
+            Guid guestId, int page, int pageSize, CancellationToken ct = default)
+        {
+            var list = await _context.Bookings
+                .Include(b => b.Items)
+                .Where(b => b.GuestId == guestId)
+                .OrderByDescending(b => b.CreatedAtUtc)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync(ct);
+            return list;
+        }
         
         public async Task<int> GetOccupancyPercentAsync(DateOnly from, DateOnly to, CancellationToken ct = default)
         {

@@ -35,11 +35,10 @@ public static class DependencyInjection
 
         services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining<InfrastructureAssemblyMarker>());
 
-        // ───── gRPC клиент для Payment Service ─────
-        var paymentServiceUrl = configuration["PaymentService:Url"] ?? "http://localhost:60400";
-        services.AddGrpcClient<PaymentService.Contracts.Grpc.V1.PaymentService.PaymentServiceClient>(options =>
+        var paymentServiceUrl = configuration["PaymentService:Url"] ?? "http://localhost:5002";
+        services.AddHttpClient<PaymentGatewayHttp>(client =>
         {
-            options.Address = new Uri(paymentServiceUrl);
+            client.BaseAddress = new Uri(paymentServiceUrl);
         });
 
         var roomServiceUrl = configuration["RoomService:Url"] ?? "http://localhost:8081";
@@ -48,9 +47,8 @@ public static class DependencyInjection
             client.BaseAddress = new Uri(roomServiceUrl);
         });
 
-        // Gateways
-        // Используем gRPC клиент для Payment Gateway, PMS пока simulated
-        services.AddScoped<IPaymentGateway, PaymentGatewayGrpc>();
+        // Gateways — payment via REST (payment-service has no gRPC server), PMS simulated
+        services.AddScoped<IPaymentGateway>(sp => sp.GetRequiredService<PaymentGatewayHttp>());
         services.AddScoped<IPmsGateway, PmsGatewaySimulated>();
         services.AddScoped<IInventoryGateway>(sp => sp.GetRequiredService<RoomServiceInventoryGateway>());
 

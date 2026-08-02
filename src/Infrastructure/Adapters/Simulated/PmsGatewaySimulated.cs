@@ -22,7 +22,7 @@ public class PmsGatewaySimulated : IPmsGateway
         _ = Task.Run(async () =>
         {
             // Simulate activity on payment side.
-            await Task.Delay(20000);
+            await Task.Delay(5000);
             _ = _bus.Publish(new PmsConfirmed(bookingId, $"PMS-{Random.Shared.Next(1000, 9999)}"), ct);
         }, ct);
 

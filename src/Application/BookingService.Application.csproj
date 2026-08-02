@@ -13,8 +13,6 @@
     <ProjectReference Include="..\Domain\BookingService.Domain.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <Reference Include="Bookings.Common">
-      <HintPath>..\..\..\..\common\Booking.Sharing\Booking.Common\bin\Debug\net9.0\Bookings.Common.dll</HintPath>
-    </Reference>
+    <PackageReference Include="Bookings.Common" Version="1.0.3" />
   </ItemGroup>
 </Project>

@@ -57,6 +57,20 @@ namespace BookingService.Api.Controllers
             return Results.Accepted($"/bookings/{id}", new { bookingId = id });
         }
 
+        [HttpGet]
+        [Route("/api/bookings")]
+        public async Task<ActionResult<BookingDto[]>> GetByGuest(
+            [FromQuery] Guid guestId,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 20)
+        {
+            if (guestId == Guid.Empty)
+                return BadRequest("guestId is required");
+
+            var bookings = await _repo.GetByGuestAsync(guestId, page, pageSize);
+            return Ok(bookings.Select(b => _mapper.Map<BookingDto>(b)));
+        }
+
         [HttpGet("{id}")]
         public async Task<ActionResult<BookingDto>> Get(Guid id)
         {

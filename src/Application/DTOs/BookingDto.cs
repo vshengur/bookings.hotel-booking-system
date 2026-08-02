@@ -13,4 +13,7 @@ public record BookingDto
     public DateOnly CheckOut { get; init; }
     public string TotalPrice { get; init; } = default!;
     public BookingStatus Status { get; init; }
+    public DateTime CreatedAt { get; init; }
+    /// <summary>UTC deadline for payment. Null if the booking is no longer awaiting payment.</summary>
+    public DateTime? PaymentExpiresAt { get; init; }
 }
