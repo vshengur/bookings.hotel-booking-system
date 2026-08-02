@@ -4,9 +4,6 @@
 [submodule "services/booking-service"]
 	path = services/booking-service
 	url = https://github.com/vshengur/bookings.booking-service.git
-[submodule "services/inventory-service"]
-	path = services/inventory-service
-	url = https://github.com/vshengur/bookings.inventory-service.git
 [submodule "services/payment-service"]
 	path = services/payment-service
 	url = https://github.com/vshengur/bookings.payment-service.git
