@@ -21,13 +21,15 @@ public sealed class CreatePaymentIntentRequestValidator : AbstractValidator<Crea
             .WithMessage("BookingId is required.");
 
         RuleFor(x => x.Amount)
-            .GreaterThan(0)
+            .NotNull().WithMessage("Amount is required.")
+            .GreaterThan(0).When(x => x.Amount.HasValue)
             .WithMessage("Amount must be greater than zero.");
 
         RuleFor(x => x.Currency)
             .NotEmpty()
             .WithMessage("Currency is required.")
-            .Must(c => allowed.Contains(c, StringComparer.OrdinalIgnoreCase))
-            .WithMessage(x => $"Currency '{x.Currency}' is not supported. Allowed: {string.Join(", ", allowed)}.");
+            .Must(c => c == null || allowed.Contains(c, StringComparer.OrdinalIgnoreCase))
+            .WithMessage(x => $"Currency '{x.Currency}' is not supported. Allowed: {string.Join(", ", allowed)}.")
+            .When(x => x.Currency != null);
     }
 }

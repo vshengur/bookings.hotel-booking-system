@@ -2,6 +2,8 @@ using Hangfire;
 
 using Microsoft.EntityFrameworkCore;
 
+using PaymentService.API.Middleware;
+using PaymentService.API.Services;
 using PaymentService.Application;
 using PaymentService.Application.Configuration;
 using PaymentService.Infrastructure;
@@ -44,6 +46,7 @@ builder.Services
     .AddApplication()
     .AddInfrastructure(connStr, rabbitMq, availabilityService);
 
+builder.Services.AddScoped<IPaymentIntentService, PaymentIntentService>();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -51,6 +54,7 @@ builder.Services.AddSwaggerGen();
 var app = builder.Build();
 
 app.UseSerilogRequestLogging();
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 if (app.Environment.IsDevelopment())
 {

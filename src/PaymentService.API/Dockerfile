@@ -1,33 +1,19 @@
-# See https://aka.ms/customizecontainer to learn how to customize your debug container and how Visual Studio uses this Dockerfile to build your images for faster debugging.
-
-# This stage is used when running from VS in fast mode (Default for Debug configuration)
-FROM mcr.microsoft.com/dotnet/aspnet:9.0-bookworm-slim AS base
-USER $APP_UID
-WORKDIR /app
-EXPOSE 8080
-EXPOSE 8081
-
-
-# This stage is used to build the service project
 FROM mcr.microsoft.com/dotnet/sdk:9.0-bookworm-slim AS build
-ARG BUILD_CONFIGURATION=Release
-WORKDIR /src
-COPY ["src/PaymentService.API/PaymentService.API.csproj", "src/PaymentService.API/"]
-COPY ["src/PaymentService.Domain/PaymentService.Domain.csproj", "src/PaymentService.Domain/"]
-COPY ["src/PaymentService.Application/PaymentService.Application.csproj", "src/PaymentService.Application/"]
-COPY ["src/PaymentService.Infrastructure/PaymentService.Infrastructure.csproj", "src/PaymentService.Infrastructure/"]
-RUN dotnet restore "./src/PaymentService.API/PaymentService.API.csproj"
-COPY . .
-WORKDIR "/src/src/PaymentService.API"
-RUN dotnet build "./PaymentService.API.csproj" -c $BUILD_CONFIGURATION -o /app/build
+WORKDIR /repo
 
-# This stage is used to publish the service project to be copied to the final stage
-FROM build AS publish
-ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "./PaymentService.API.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+# Local NuGet packages must be available before restore
+COPY common/packages/ ./common/packages/
+COPY nuget.config ./nuget.config
+COPY proto/ ./proto/
 
-# This stage is used in production or when running from VS in regular mode (Default when not using the Debug configuration)
-FROM base AS final
+# Copy service source
+COPY services/payment-service/src/ ./services/payment-service/src/
+
+WORKDIR /repo/services/payment-service/src
+RUN dotnet publish PaymentService.API/PaymentService.API.csproj -c Release -o /publish --no-self-contained
+
+FROM mcr.microsoft.com/dotnet/aspnet:9.0-bookworm-slim
 WORKDIR /app
-COPY --from=publish /app/publish .
+COPY --from=build /publish .
+EXPOSE 80
 ENTRYPOINT ["dotnet", "PaymentService.API.dll"]
