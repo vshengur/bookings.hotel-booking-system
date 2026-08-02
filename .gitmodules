@@ -13,6 +13,3 @@
 [submodule "frontend/booking-frontend"]
 	path = frontend/booking-frontend
 	url = https://github.com/vshengur/bookings.booking-frontend.git
-[submodule "frontend/payment-frontend"]
-	path = frontend/payment-frontend
-	url = https://github.com/vshengur/bookings.payment-frontend.git
