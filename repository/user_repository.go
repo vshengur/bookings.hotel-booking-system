@@ -3,6 +3,7 @@ package repository
 import (
 	"log"
 
+	"github.com/google/uuid"
 	"github.com/vshengur/bookings.auth-service/models"
 	"gorm.io/gorm"
 )
@@ -40,6 +41,11 @@ func (r *userRepository) FindOrCreate(user *models.User) *models.User {
 	existingUser := r.FindByEmail(user.Email)
 	if existingUser != nil {
 		return existingUser
+	}
+
+	// Assign a stable UUID so other services (bookings-service) can use it as guestId
+	if user.UserID == "" {
+		user.UserID = uuid.New().String()
 	}
 
 	err := r.db.Create(user).Error

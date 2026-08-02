@@ -10,7 +10,9 @@ import (
 
 func GenerateJWT(user *models.User) (string, error) {
 	claims := jwt.MapClaims{
+		"sub":   user.UserID, // stable UUID — used as guestId in bookings-service
 		"email": user.Email,
+		"name":  user.FullName,
 		"role":  user.Role,
 		"exp":   time.Now().Add(24 * time.Hour).Unix(),
 	}

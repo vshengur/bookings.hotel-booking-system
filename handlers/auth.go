@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/vshengur/bookings.auth-service/config"
 	"github.com/vshengur/bookings.auth-service/repository"
 	"github.com/vshengur/bookings.auth-service/services"
 	"github.com/vshengur/bookings.auth-service/utils"
@@ -43,5 +44,9 @@ func (h *AuthHandler) GoogleCallback(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"token": token})
+	frontendURL := config.AppConfig.FrontendURL
+	if frontendURL == "" {
+		frontendURL = "http://localhost:5173"
+	}
+	c.Redirect(http.StatusFound, frontendURL+"?token="+token)
 }

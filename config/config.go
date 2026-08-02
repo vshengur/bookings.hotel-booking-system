@@ -19,6 +19,7 @@ type Config struct {
 	GoogleClientID    string
 	GoogleSecret      string
 	JWTSecret         string
+	FrontendURL       string
 }
 
 var AppConfig *Config
@@ -50,6 +51,7 @@ func LoadConfig() {
 		GoogleClientID:    getConfigValue("GOOGLE_CLIENT_ID"),
 		GoogleSecret:      getConfigValue("GOOGLE_CLIENT_SECRET"),
 		JWTSecret:         getConfigValue("JWT_SECRET"),
+		FrontendURL:       getConfigValue("FRONTEND_URL"),
 	}
 }
 
