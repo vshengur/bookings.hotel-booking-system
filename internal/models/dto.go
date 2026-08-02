@@ -63,23 +63,26 @@ type SearchRoomsRequest struct {
 }
 
 // CheckAvailabilityRequest represents the request to check room availability
+// RoomID is populated from the URL path parameter, not from the query string.
 type CheckAvailabilityRequest struct {
-	RoomID   int64     `json:"room_id" binding:"required"`
-	CheckIn  time.Time `json:"check_in" binding:"required"`
-	CheckOut time.Time `json:"check_out" binding:"required"`
+	RoomID   int64     `json:"room_id" form:"roomId"`
+	CheckIn  time.Time `json:"check_in" form:"checkIn" binding:"required"`
+	CheckOut time.Time `json:"check_out" form:"checkOut" binding:"required"`
 }
 
-// ReserveRoomRequest represents the request to reserve a room
+// ReserveRoomRequest represents the request to reserve a room.
+// RoomID is populated from the URL path parameter, not the request body.
 type ReserveRoomRequest struct {
-	RoomID           int64     `json:"room_id" binding:"required"`
+	RoomID           int64     `json:"room_id"`
 	CheckIn          time.Time `json:"check_in" binding:"required"`
 	CheckOut         time.Time `json:"check_out" binding:"required"`
 	BookingReference string    `json:"booking_reference" binding:"required"`
 }
 
-// ReleaseRoomRequest represents the request to release a room reservation
+// ReleaseRoomRequest represents the request to release a room reservation.
+// RoomID is populated from the URL path parameter, not the request body.
 type ReleaseRoomRequest struct {
-	RoomID           int64  `json:"room_id" binding:"required"`
+	RoomID           int64  `json:"room_id"`
 	BookingReference string `json:"booking_reference" binding:"required"`
 }
 
