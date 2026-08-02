@@ -57,6 +57,8 @@ export interface Booking {
   status: BookingStatus;
   totalPrice: string;
   roomId: number;
+  createdAt: string;           // ISO 8601 UTC
+  paymentExpiresAt?: string;   // ISO 8601 UTC — null when booking is not awaiting payment
 }
 
 export interface PaymentIntentResponse {

@@ -4,12 +4,18 @@ import type {
   Booking,
   PaymentIntentResponse,
 } from '../types';
+import { getToken } from '../auth';
 
 const BASE = import.meta.env.VITE_GATEWAY_URL ?? 'http://localhost:8080';
 
+function authHeaders(): Record<string, string> {
+  const token = getToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
-    headers: { 'Content-Type': 'application/json', ...init?.headers },
+    headers: { 'Content-Type': 'application/json', ...authHeaders(), ...init?.headers },
     ...init,
   });
   if (!res.ok) {
@@ -17,10 +23,15 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     throw new Error(`${res.status} ${path}: ${text}`);
   }
   if (res.status === 204) return undefined as T;
-  return res.json();
+  const text = await res.text();
+  return text ? JSON.parse(text) as T : undefined as T;
 }
 
 // ── Rooms ──────────────────────────────────────────────────────────────────
+
+function toRfc3339(date: string): string {
+  return date.includes('T') ? date : `${date}T00:00:00Z`;
+}
 
 export function searchRooms(
   checkIn: string,
@@ -29,8 +40,8 @@ export function searchRooms(
   children: number,
 ): Promise<SearchRoomsResponse> {
   const q = new URLSearchParams({
-    checkIn,
-    checkOut,
+    checkIn:  toRfc3339(checkIn),
+    checkOut: toRfc3339(checkOut),
     adults: String(adults),
     children: String(children),
   });
@@ -39,6 +50,15 @@ export function searchRooms(
 
 export function getRoom(id: number): Promise<Room> {
   return request(`/api/rooms/${id}`);
+}
+
+export function checkRoomAvailability(
+  id: number,
+  checkIn: string,
+  checkOut: string,
+): Promise<{ is_available: boolean }> {
+  const q = new URLSearchParams({ checkIn: toRfc3339(checkIn), checkOut: toRfc3339(checkOut) });
+  return request(`/api/rooms/${id}/availability?${q}`);
 }
 
 // ── Bookings ───────────────────────────────────────────────────────────────
@@ -64,6 +84,18 @@ export function createBooking(payload: CreateBookingPayload): Promise<{ bookingI
 
 export function getBooking(id: string): Promise<Booking> {
   return request(`/api/booking/${id}`);
+}
+
+export function cancelBooking(id: string, reason?: string): Promise<void> {
+  return request(`/api/booking/${id}/cancel`, {
+    method: 'POST',
+    body: JSON.stringify({ reason: reason ?? 'Cancelled by user' }),
+  });
+}
+
+export function getMyBookings(guestId: string, page = 1): Promise<Booking[]> {
+  const q = new URLSearchParams({ guestId, page: String(page), pageSize: '20' });
+  return request(`/api/bookings?${q}`);
 }
 
 // ── Payment ────────────────────────────────────────────────────────────────

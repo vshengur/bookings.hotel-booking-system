@@ -1,34 +1,49 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { searchRooms } from '../api/gateway';
-import type { Room, SearchParams } from '../types';
+import { searchRooms, getMyBookings } from '../api/gateway';
+import { useSearch } from '../SearchContext';
+import { getGuestId, isAuthenticated } from '../auth';
+import type { Booking, BookingStatus, Room } from '../types';
 
 const today = () => new Date().toISOString().slice(0, 10);
-const tomorrow = () => {
-  const d = new Date();
-  d.setDate(d.getDate() + 1);
-  return d.toISOString().slice(0, 10);
-};
+
+const ACTIVE_STATUSES = new Set<BookingStatus>(['Created', 'Pending', 'AwaitingPayment', 'Reserved', 'Confirmed']);
+
+function datesOverlap(
+  aIn: string, aOut: string,
+  bIn: string, bOut: string,
+): boolean {
+  return aIn < bOut && aOut > bIn;
+}
 
 export default function SearchPage() {
   const navigate = useNavigate();
-  const [params, setParams] = useState<SearchParams>({
-    checkIn: today(),
-    checkOut: tomorrow(),
-    adults: 2,
-    children: 0,
-  });
-  const [rooms, setRooms] = useState<Room[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const { params, setParams } = useSearch();
+  const [rooms, setRooms]                     = useState<Room[]>([]);
+  const [conflictBookings, setConflictBookings] = useState<Booking[]>([]);
+  const [loading, setLoading]                 = useState(false);
+  const [error, setError]                     = useState('');
 
   async function handleSearch(e: React.FormEvent) {
     e.preventDefault();
     setError('');
+    setConflictBookings([]);
     setLoading(true);
     try {
-      const res = await searchRooms(params.checkIn, params.checkOut, params.adults, params.children);
+      const [res, myBookings] = await Promise.all([
+        searchRooms(params.checkIn, params.checkOut, params.adults, params.children),
+        isAuthenticated()
+          ? getMyBookings(getGuestId()).catch(() => [] as Booking[])
+          : Promise.resolve([] as Booking[]),
+      ]);
       setRooms(res.rooms ?? []);
+
+      // Find active bookings overlapping the searched period
+      const conflicts = myBookings.filter(
+        b => ACTIVE_STATUSES.has(b.status) &&
+             datesOverlap(params.checkIn, params.checkOut, b.checkIn, b.checkOut),
+      );
+      setConflictBookings(conflicts);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Search failed');
     } finally {
@@ -36,8 +51,8 @@ export default function SearchPage() {
     }
   }
 
-  function set(field: keyof SearchParams, value: string | number) {
-    setParams(p => ({ ...p, [field]: value }));
+  function set<K extends keyof typeof params>(field: K, value: typeof params[K]) {
+    setParams({ ...params, [field]: value });
   }
 
   return (
@@ -72,24 +87,41 @@ export default function SearchPage() {
 
       {error && <p className="error">{error}</p>}
 
+      {/* ── Existing booking warning ── */}
+      {conflictBookings.length > 0 && (
+        <div className="conflict-banner">
+          <strong>⚠ You already have {conflictBookings.length === 1 ? 'a booking' : 'bookings'} for these dates:</strong>
+          <ul>
+            {conflictBookings.map(b => (
+              <li key={b.id}>
+                {b.checkIn} → {b.checkOut} — {b.status}{' '}
+                <button className="room-link" onClick={() => navigate(`/confirmation/${b.id}`)}>
+                  View booking →
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {rooms.length === 0 && !loading && !error && (
         <p className="hint">Enter dates and press Search to see available rooms.</p>
       )}
 
       <div className="room-list">
         {rooms.map(room => (
-          <div key={room.id} className="room-card"
-            onClick={() => navigate(`/rooms/${room.id}`, { state: { params } })}>
-            {room.images.find(i => i.is_primary)?.url && (
-              <img src={room.images.find(i => i.is_primary)!.url} alt={room.room_type} />
+          <button key={room.id} className="room-card"
+            onClick={() => navigate(`/rooms/${room.id}`)}>
+            {(room.images ?? []).find(i => i.is_primary)?.url && (
+              <img src={(room.images ?? []).find(i => i.is_primary)!.url} alt={room.room_type} />
             )}
             <div className="room-card-body">
               <h3>{room.room_type} — Room {room.room_number}</h3>
               <p>{room.description}</p>
               <p>Floor {room.floor} · {room.capacity} guests · {room.bed_type} · {room.size} m²</p>
-              <button>View &amp; Book →</button>
+              <span className="room-card-cta">View &amp; Book →</span>
             </div>
-          </div>
+          </button>
         ))}
       </div>
     </div>

@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { createBooking } from '../api/gateway';
-import type { Room, SearchParams } from '../types';
+import { getGuestId } from '../auth';
+import { useSearch } from '../SearchContext';
+import type { Room } from '../types';
 
-// PoC: hardcoded guest id; replace with auth context when auth is wired
-const POC_GUEST_ID = '00000000-0000-0000-0000-000000000001';
 // PoC: hardcoded price; replace with pricing-service call
 const NIGHTLY_PRICE = 120;
 const CURRENCY = 'EUR';
@@ -19,13 +19,14 @@ function nightsBetween(checkIn: string, checkOut: string) {
 export default function BookingFormPage() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { params } = useSearch();
+
   const room: Room | undefined = location.state?.room;
-  const params: SearchParams | undefined = location.state?.params;
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  if (!room || !params) {
+  if (!room) {
     return (
       <div className="page">
         <p className="error">Missing booking context. Please start from the search page.</p>
@@ -34,6 +35,7 @@ export default function BookingFormPage() {
     );
   }
 
+  const checkedRoom = room; // narrowed: Room (not undefined) — TypeScript can't narrow through closures
   const nights = nightsBetween(params.checkIn, params.checkOut);
   const total = (NIGHTLY_PRICE * nights).toFixed(2);
 
@@ -45,18 +47,18 @@ export default function BookingFormPage() {
     try {
       await createBooking({
         bookingId,
-        guestId: POC_GUEST_ID,
-        checkIn: params!.checkIn,
-        checkOut: params!.checkOut,
+        guestId: getGuestId(),
+        checkIn: params.checkIn,
+        checkOut: params.checkOut,
         items: [{
-          roomId: room!.id,
-          adults: params!.adults,
-          children: params!.children,
+          roomId: checkedRoom.id,
+          adults: params.adults,
+          children: params.children,
           nights,
           pricePerNight: { amount: NIGHTLY_PRICE, currency: CURRENCY },
         }],
       });
-      navigate(`/payment/${bookingId}`, { state: { room, params, total } });
+      navigate(`/payment/${bookingId}`, { state: { total } });
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Booking failed');
     } finally {
@@ -71,10 +73,10 @@ export default function BookingFormPage() {
 
       <div className="booking-summary">
         <p><strong>Room:</strong> {room.room_type} — {room.room_number}</p>
-        <p><strong>Check-in:</strong> {params.checkIn}</p>
+        <p><strong>Check-in:</strong>  {params.checkIn}</p>
         <p><strong>Check-out:</strong> {params.checkOut}</p>
-        <p><strong>Nights:</strong> {nights}</p>
-        <p><strong>Guests:</strong> {params.adults} adult{params.adults !== 1 ? 's' : ''}{params.children > 0 ? `, ${params.children} child${params.children !== 1 ? 'ren' : ''}` : ''}</p>
+        <p><strong>Nights:</strong>    {nights}</p>
+        <p><strong>Guests:</strong> {params.adults} adult{params.adults === 1 ? '' : 's'}{params.children > 0 ? `, ${params.children} child${params.children === 1 ? '' : 'ren'}` : ''}</p>
         <p><strong>Price per night:</strong> {NIGHTLY_PRICE} {CURRENCY}</p>
         <p><strong>Total:</strong> {total} {CURRENCY}</p>
       </div>
