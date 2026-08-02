@@ -13,9 +13,6 @@
 [submodule "services/api-gateway"]
 	path = services/api-gateway
 	url = https://github.com/vshengur/bookings.api-gateway.git
-[submodule "services/monitoring"]
-	path = services/monitoring
-	url = https://github.com/vshengur/bookings.monitoring.git
 [submodule "frontend/booking-frontend"]
 	path = frontend/booking-frontend
 	url = https://github.com/vshengur/bookings.booking-frontend.git
