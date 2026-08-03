@@ -1,0 +1,40 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: infra-ui-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$1
+spec:
+  rules:
+    - host: infra.local
+      http:
+        paths:
+          - path: /rabbitmq/?(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: rabbitmq
+                port:
+                  number: 15672
+          - path: /seq/?(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: seq
+                port:
+                  number: 5341
+          - path: /grafana/?(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: grafana
+                port:
+                  number: 3000
+          - path: /kibana/?(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: kibana
+                port:
+                  number: 5601

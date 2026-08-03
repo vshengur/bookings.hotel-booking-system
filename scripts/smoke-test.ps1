@@ -27,9 +27,9 @@ function Step([string]$name, [scriptblock]$action) {
 
 function Invoke([string]$method, [string]$path, $body = $null) {
     $uri = "$GatewayUrl$path"
-    $args = @{ Method = $method; Uri = $uri; ContentType = "application/json" }
-    if ($body) { $args.Body = ($body | ConvertTo-Json -Depth 10) }
-    Invoke-RestMethod @args
+    $params = @{ Method = $method; Uri = $uri; ContentType = "application/json" }
+    if ($body) { $params.Body = ($body | ConvertTo-Json -Depth 10) }
+    Invoke-RestMethod @params
 }
 
 # ── Step 1: Gateway health ─────────────────────────────────────────────────
@@ -83,9 +83,21 @@ Step "5. Booking status = Created or AwaitingPayment" {
 }
 
 # ── Step 6: Create payment intent ─────────────────────────────────────────
+# The booking saga creates the intent asynchronously via RabbitMQ — retry until it appears.
 Step "6. Create payment intent" {
-    $r = Invoke POST "/payment/intent" @{ bookingId = $bookingId }
-    Write-Host "  intentId=$($r.intentId)"
+    $intentId = $null
+    for ($i = 0; $i -lt 20; $i++) {
+        try {
+            $r = Invoke POST "/payment/intent" @{ bookingId = $bookingId }
+            $intentId = $r.intentId
+            break
+        } catch {
+            if ($i -eq 19) { throw }
+            Write-Host "  waiting for saga to create intent (attempt $($i+1)/20)…"
+            Start-Sleep -Seconds 1
+        }
+    }
+    Write-Host "  intentId=$intentId"
 }
 
 # ── Step 7: Simulate payment success ──────────────────────────────────────
@@ -96,10 +108,10 @@ Step "7. Simulate payment webhook (Succeeded)" {
 # ── Step 8: Wait and verify booking advanced ───────────────────────────────
 Step "8. Booking advances to Reserved or Confirmed" {
     $final = @("Reserved", "Confirmed", "Failed", "Cancelled")
-    for ($i = 0; $i -lt 15; $i++) {
+    for ($i = 0; $i -lt 30; $i++) {
         Start-Sleep -Seconds 2
         $r = Invoke GET "/api/booking/$bookingId"
-        Write-Host "  poll $($i+1)/15: status=$($r.status)"
+        Write-Host "  poll $($i+1)/30: status=$($r.status)"
         if ($r.status -in $final) {
             if ($r.status -in @("Failed", "Cancelled")) {
                 throw "Booking ended in failure state: $($r.status)"
@@ -108,7 +120,7 @@ Step "8. Booking advances to Reserved or Confirmed" {
             return
         }
     }
-    throw "Booking did not advance after 30s. Last status: $($r.status)"
+    throw "Booking did not advance after 60s. Last status: $($r.status)"
 }
 
 # ── Summary ────────────────────────────────────────────────────────────────

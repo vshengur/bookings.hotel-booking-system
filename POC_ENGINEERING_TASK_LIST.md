@@ -110,6 +110,7 @@ Current note:
 ### A3. Add booking creation validation
 
 Priority: `P0`
+Status: `In progress`
 
 Service:
 
@@ -127,10 +128,18 @@ What to do:
 - validate `checkIn` is not in the past
 - validate booking has at least one line item
 - validate positive nights and money values
+- keep the new real inventory availability pre-check in the create flow
 
 Done when:
 
 - invalid requests fail early with usable API errors
+
+Current note:
+
+- create flow now rejects past check-in dates
+- create flow now rejects empty item lists
+- create flow now rejects non-positive nightly prices
+- remaining gaps are guest existence and promo-code validation
 
 ---
 
@@ -204,7 +213,7 @@ Current note:
 ### B2. Validate room availability before booking creation
 
 Priority: `P0`
-Status: `Not started`
+Status: `Started`
 
 Service:
 
@@ -223,6 +232,10 @@ What to do:
 Done when:
 
 - booking cannot be created for unavailable dates
+
+Current note:
+
+- `CreateBookingCommandHandler` now performs a real availability pre-check through the room-service-backed inventory gateway
 
 ---
 
@@ -259,6 +272,7 @@ Cross-cutting status:
 ### C1. Verify booking-to-payment amount flow
 
 Priority: `P0`
+Status: `Done`
 
 Services:
 
@@ -280,11 +294,18 @@ Done when:
 
 - payment intent is created from real booking data without hardcoded values
 
+Current note:
+
+- `CreatePaymentCommandHandler` passes `booking.TotalPrice.Amount` to `IPaymentGateway.CreateIntentAsync` — real booking amount is used
+- `POST /payment/intent` now returns the saga-pre-created intent when called with just `bookingId` (idempotent lookup)
+- frontend and smoke test both send `{ bookingId }` only — controller looks up existing intent before validation
+
 ---
 
 ### C2. Verify webhook updates booking state correctly
 
 Priority: `P0`
+Status: `Done`
 
 Services:
 
@@ -305,6 +326,13 @@ What to do:
 Done when:
 
 - successful payment reliably moves booking to `Reserved` and then `Confirmed`
+
+Current note:
+
+- webhook controller fixed to accept flat `{ bookingId, status }` body (PoC test mode) in addition to nested `{ metadata: { bookingId }, status }` (real PSP shape)
+- status comparison changed to case-insensitive (`"Succeeded"` and `"succeeded"` both accepted)
+- `PaymentStatusChangedConsumer` correctly translates to `PaymentAuthorized` / `PaymentFailed` saga events
+- saga transitions `AwaitingPayment → Reserved` on `PaymentAuthorized`, then `Reserved → Confirmed` after PMS stub
 
 ---
 
@@ -338,65 +366,69 @@ Done when:
 ### D1. Route room APIs through gateway
 
 Priority: `P0`
+Status: `Done`
 
 Services:
 
-- `services/api-gateway` or `services/api-gateway-golang`
+- `services/dev-gateway` (nginx)
 - `services/room-service`
 
 Main files:
 
-- C# gateway config and provider files
-- or Go gateway route files such as `internal/routes/routes.go`
-
-What to do:
-
-- expose room search/details/availability via gateway
+- `services/dev-gateway/nginx/conf.d/gateway.conf`
+- `services/dev-gateway/nginx/conf.d/upstreams.conf`
 
 Done when:
 
 - frontend can call room APIs through one gateway base URL
+
+Current note:
+
+- nginx dev-gateway at `:8080` routes `/api/rooms` → `room-service:8083`
+- CORS headers added for `localhost:5173` (Vite dev server)
 
 ---
 
 ### D2. Route booking APIs through gateway
 
 Priority: `P0`
+Status: `Done`
 
 Services:
 
-- gateway service
+- `services/dev-gateway` (nginx)
 - `services/bookings-service`
-
-What to do:
-
-- add create/get/confirm/cancel booking routes
-- ensure auth expectations are clear
 
 Done when:
 
 - frontend can complete booking flow through gateway only
+
+Current note:
+
+- nginx routes `/api/booking` → `bookingservice.api:80`
+- WebSocket `/hubs/booking` proxied with Upgrade header for SignalR
 
 ---
 
 ### D3. Route pricing and payment APIs through gateway
 
 Priority: `P0`
+Status: `Done`
 
 Services:
 
-- gateway service
+- `services/dev-gateway` (nginx)
 - `services/pricing-service`
 - `services/payment-service`
-
-What to do:
-
-- add route definitions for pricing and payment
-- normalize path conventions where possible
 
 Done when:
 
 - demo UI does not need to call internal service URLs directly
+
+Current note:
+
+- nginx routes `/api/pricing` → `pricing-service:5003`
+- nginx routes `/payment` → `payment-service:80`; `/payment/webhook` skips auth
 
 ---
 
@@ -405,143 +437,107 @@ Done when:
 ### E1. Initialize minimal guest frontend
 
 Priority: `P0`
+Status: `Done`
 
 Service:
 
 - `frontend/booking-frontend`
 
-What to do:
-
-- replace placeholder repo contents with actual app scaffold
-- choose a minimal stack and keep it small
-
-Recommended initial scope:
-
-- one app
-- basic router/pages
-- simple API client
-
 Done when:
 
 - project runs locally and can render real pages
+
+Current note:
+
+- React 18 + Vite + TypeScript + react-router-dom v6
+- `npm run dev` starts on `localhost:5173`; `VITE_GATEWAY_URL` env var controls API base URL
 
 ---
 
 ### E2. Build search page
 
 Priority: `P0`
+Status: `Done`
 
 Service:
 
 - `frontend/booking-frontend`
 
-Backend dependencies:
-
-- gateway
-- room-service
-
-What to do:
-
-- date inputs
-- guest count
-- search submission
-- results list
-
 Done when:
 
 - user can search and see rooms from real API data
+
+Current note:
+
+- `SearchPage.tsx`: date inputs, guest count, calls `GET /api/rooms/search`, shows room cards
 
 ---
 
 ### E3. Build room details page
 
 Priority: `P0`
+Status: `Done`
 
 Service:
 
 - `frontend/booking-frontend`
 
-Backend dependencies:
-
-- room-service
-- pricing-service if used directly
-
-What to do:
-
-- display room information
-- show price summary
-- allow proceed to booking
-
 Done when:
 
 - user can choose a room and continue
+
+Current note:
+
+- `RoomDetailsPage.tsx`: fetches room by id, shows amenities and images, passes `params` state to booking form
 
 ---
 
 ### E4. Build booking form page
 
 Priority: `P0`
+Status: `Done`
 
 Service:
 
 - `frontend/booking-frontend`
 
-Backend dependencies:
-
-- bookings-service
-
-What to do:
-
-- capture guest details
-- create booking
-- handle booking API errors
-
 Done when:
 
 - a booking is created from UI and returns a booking ID
+
+Current note:
+
+- `BookingFormPage.tsx`: hardcoded `POC_GUEST_ID` and `NIGHTLY_PRICE=120 EUR`; posts to `POST /api/booking`
 
 ---
 
 ### E5. Build payment page
 
 Priority: `P0`
+Status: `Done`
 
 Service:
 
 - `frontend/booking-frontend`
 
-Backend dependencies:
-
-- payment-service
-
-What to do:
-
-- request payment intent
-- complete payment in test mode
-- show progress and failure states
-
 Done when:
 
 - a user can complete test payment from UI
+
+Current note:
+
+- `PaymentPage.tsx`: polls for saga-pre-created intent with 8s retry backoff; simulates payment via `POST /payment/webhook { bookingId, status }`; polls booking status until Reserved/Confirmed
 
 ---
 
 ### E6. Build confirmation page
 
 Priority: `P0`
+Status: `Done`
 
 Service:
 
 - `frontend/booking-frontend`
-
-Backend dependencies:
-
-- bookings-service
-
-What to do:
-
-- show final booking status
-- display booking identifier and summary
 
 Done when:
 
@@ -572,37 +568,42 @@ Done when:
 ### F1. Create local PoC runbook
 
 Priority: `P0`
+Status: `Done`
 
-Main file candidates:
+Main file:
 
-- root README or dedicated PoC setup doc
-
-What to do:
-
-- document services to start
-- document env requirements
-- document demo credentials and test card flow
+- `POC_RUNBOOK.md`
 
 Done when:
 
 - another developer can run the demo without tribal knowledge
+
+Current note:
+
+- `POC_RUNBOOK.md` documents first-run setup, demo happy path, curl checks, seed data, and troubleshooting table
+- `docker-compose.poc.yml` is the all-in-one compose: infra + 5 databases + 5 services + nginx gateway
 
 ---
 
 ### F2. Run end-to-end smoke test
 
 Priority: `P0`
+Status: `Done (script exists; run to validate)`
 
-What to test:
+Main file:
 
-1. login
-2. search room
-3. open room
+- `scripts/smoke-test.ps1`
+
+What the script tests:
+
+1. gateway health
+2. search rooms
+3. room availability
 4. create booking
-5. reserve room
-6. create payment intent
-7. complete test payment
-8. see final confirmed state
+5. verify booking status = Created or AwaitingPayment
+6. create payment intent (retries up to 10s for saga)
+7. simulate payment webhook (Succeeded)
+8. poll until booking reaches Reserved or Confirmed
 
 Done when:
 

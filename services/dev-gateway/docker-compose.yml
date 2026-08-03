@@ -1,0 +1,20 @@
+services:
+  gateway:
+    image: nginx:1.27-alpine
+    container_name: booking-api-gateway
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - gateway_cache:/var/cache/nginx
+    networks:
+      - booking-net
+
+volumes:
+  gateway_cache:
+
+networks:
+  booking-net:
+    external: true
+    name: booking-net

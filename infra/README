@@ -1,0 +1,29 @@
+✅ Примеры использования
+Пример 1. Локальная разработка
+
+Предврительно:
+docker network create booking-net
+
+make up        # Запустить все контейнеры локально
+make logs      # Смотреть логи (например, от Seq)
+make down      # Остановить всё
+
+Пример 2. Kubernetes minikube
+
+minikube start
+make k8s-apply
+- helm install booking-infra ./helm/booking-infra \
+	--set ingress.enabled=true \
+	--set ingress.host=infra.local
+
+# открыть RabbitMQ UI
+minikube service rabbitmq
+
+Пример 3. CI/CD
+
+В .gitlab-ci.yml:
+
+script:
+  - make k8s-apply
+  - helm upgrade --install infra ./helm/booking-infra
+  

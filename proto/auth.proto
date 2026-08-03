@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package auth;
+
+// Сервис для проверки токена
+service AuthService {
+  // Метод проверки токена
+  rpc ValidateToken (ValidateTokenRequest) returns (ValidateTokenResponse);
+}
+
+// Запрос для проверки токена
+message ValidateTokenRequest {
+  string token = 1;
+}
+
+// Ответ с данными о токене
+message ValidateTokenResponse {
+  bool valid = 1;         // Токен валиден или нет
+  string email = 2;       // Email пользователя (если валиден)
+  string role = 3;        // Роль пользователя (если валиден)
+  string error = 4;       // Описание ошибки (если токен не валиден)
+}

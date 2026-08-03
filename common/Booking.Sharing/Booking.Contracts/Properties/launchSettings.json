@@ -1,0 +1,7 @@
+{
+  "profiles": {
+    "Bookings.Contracts": {
+      "commandName": "Project"
+    }
+  }
+}

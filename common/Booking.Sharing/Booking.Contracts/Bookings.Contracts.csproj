@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<PackageId>Bookings.Contracts</PackageId>
+		<Version>1.0.6</Version>
+		<RepositoryUrl>https://…</RepositoryUrl>
+		<PublishRepositoryUrl>true</PublishRepositoryUrl>
+		<ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+    </PropertyGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\Booking.Common\Bookings.Common.csproj" />
+	</ItemGroup>
+
+</Project>

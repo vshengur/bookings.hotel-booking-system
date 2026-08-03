@@ -1,0 +1,30 @@
+rabbitmq:
+  enabled: true
+
+postgres:
+  enabled: true
+
+mongodb:
+  enabled: true
+
+seq:
+  enabled: true
+
+consul:
+  enabled: true
+
+elasticsearch:
+  enabled: true
+
+kibana:
+  enabled: true
+
+prometheus:
+  enabled: true
+
+grafana:
+  enabled: true
+
+ingress:
+  enabled: true
+  host: infra.local

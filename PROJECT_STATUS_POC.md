@@ -178,18 +178,21 @@ What exists:
 - basic handler-level tests for confirm/cancel flow
 - optimistic concurrency protection has started at the persistence layer for booking updates
 - controller-level exception handling moved into API middleware
+- create booking now performs a real room availability pre-check before persistence
+- create booking now rejects past check-in dates, empty item lists, and non-positive nightly prices before persistence
 
 What is incomplete in code:
 
 - no visible complete user bookings listing API
 - critical inventory integration is still simulated
-- booking creation validation is still incomplete
+- booking creation validation is improved but still not complete (`guest exists`, promo validation)
 
 Evidence in code:
 
 - `services/bookings-service/src/Api/Controllers/BookingController.cs`
 - `services/bookings-service/src/Application/Handlers/ConfirmBookingCommandHandler.cs`
 - `services/bookings-service/src/Application/Handlers/CancelBookingCommandHandler.cs`
+- `services/bookings-service/src/Application/Handlers/CreateBookingCommandHandler.cs`
 - `services/bookings-service/src/Infrastructure/Persistence/BookingDbContext.cs`
 
 Assessment:
@@ -496,7 +499,7 @@ For first PoC, the following are acceptable shortcuts:
 
 2. Replace simulated inventory integration
    - finish validating bookings-service to room-service integration
-   - check availability before booking
+   - keep the new availability pre-check stable under real environment runs
    - reserve room on booking creation
    - release room on cancel/expire/failure
 

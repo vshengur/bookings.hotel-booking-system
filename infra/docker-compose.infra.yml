@@ -1,0 +1,156 @@
+services:
+
+  rabbitmq:
+    image: rabbitmq:4.1-management
+    container_name: rabbitmq
+    hostname: rabbitmq.domain.org
+    restart: always
+    env_file: .env
+    ports:
+      - "5672:5672"
+      - "15672:15672" # RabbitMQ UI
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+      RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS: -rabbit log_levels [{connection,error},{default,error}] disk_free_limit 2147483648
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    networks:
+      - booking-net
+
+  seq:
+    image: datalust/seq:2024
+    container_name: seq
+    ports:
+      - "5341:80"
+    environment:
+      - ACCEPT_EULA=Y
+    volumes:
+      - seq-data:/data
+    networks:
+      - booking-net
+
+  #postgres:
+  #  image: postgres:17.5
+  #  container_name: postgres
+  #  ports:
+  #    - "5432:5432"
+  #  environment:
+  #    POSTGRES_USER: dev
+  #    POSTGRES_PASSWORD: dev
+  #    POSTGRES_DB: bookingdb
+  #  volumes:
+  #    - postgres-data:/var/lib/postgresql/data
+  #  networks:
+  #    - booking-net
+
+  mongodb:
+    image: mongo:6
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - booking-net
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.0.4
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+    ports:
+      - "9200:9200"
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+    networks:
+      - booking-net
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:9.0.4
+    container_name: kibana
+    ports:
+      - "5601:5601"
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    depends_on:
+      - elasticsearch
+    networks:
+      - booking-net
+
+  consul:
+    image: hashicorp/consul:1.21
+    container_name: consul
+    ports:
+      - "8500:8500"  # Web UI
+      - "8600:8600/udp" # DNS
+    command: agent -dev -client=0.0.0.0
+    environment:
+      - CONSUL_BIND_INTERFACE=eth0
+    volumes:
+      - ./consul-data:/consul/data
+      - ./consul-config:/consul/config
+    networks:
+      - booking-net
+    healthcheck:
+      test: ["CMD", "consul", "members"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  consul-init:
+    build:
+      context: ../services/consul
+      dockerfile_inline: |
+        FROM alpine:latest
+        RUN apk add --no-cache curl jq openssl bash
+        COPY consul-config/init-secrets.sh /init-secrets.sh
+        RUN chmod +x /init-secrets.sh
+    container_name: consul-init
+    depends_on:
+      consul:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      - CONSUL_FOLDER=config
+    networks:
+      - booking-net
+    command: ["/bin/bash", "/init-secrets.sh"]
+
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    networks:
+      - booking-net
+
+  grafana:
+    image: grafana/grafana:12.1.0
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    volumes:
+      - grafana-data:/var/lib/grafana
+    networks:
+      - booking-net
+
+volumes:
+  rabbitmq-data:
+  seq-data:
+  postgres-data:
+  mongo-data:
+  elasticsearch-data:
+  consul-data:
+  grafana-data:
+
+networks:
+  booking-net:
+    external: true
+    name: booking-net

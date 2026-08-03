@@ -137,9 +137,12 @@ services:
       DB_PASSWORD: postgres
       DB_NAME: authdb
       JWT_SECRET: ${JWT_SECRET}
-      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
-      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      CONSUL_ADDRESS: consul:8500
+      CONSUL_FOLDER: config
+      # Google OAuth credentials loaded from Consul KV at runtime (not from env).
+      # Set them via: curl -X PUT -d "<value>" http://localhost:8500/v1/kv/config/GOOGLE_CLIENT_ID
       GOOGLE_REDIRECT_URL: ${GOOGLE_REDIRECT_URL:-http://localhost:8080/api/auth/callback}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
     networks: [booking-net]
 
   room-service:
@@ -185,7 +188,9 @@ services:
     networks: [booking-net]
 
   payment-service:
-    build: ./services/payment-service/src/PaymentService.API
+    build:
+      context: .
+      dockerfile: services/payment-service/src/PaymentService.API/Dockerfile
     container_name: payment-service
     depends_on:
       payment-db:
@@ -203,7 +208,9 @@ services:
     networks: [booking-net]
 
   bookings-service:
-    build: ./services/bookings-service
+    build:
+      context: .
+      dockerfile: services/bookings-service/Dockerfile
     container_name: bookingservice.api
     depends_on:
       bookings-db:
@@ -248,4 +255,4 @@ services:
 
 networks:
   booking-net:
-    name: booking-net
+    external: true

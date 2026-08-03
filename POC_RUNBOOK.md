@@ -47,13 +47,118 @@ docker compose -f docker-compose.poc.yml ps
 
 ### 1.4 Запустить frontend
 
+#### Типичный старт для разработки / отладки
+
 ```bash
+# Терминал 1 — бэкенд (если ещё не запущен)
+docker compose -f docker-compose.poc.yml up -d
+
+# Терминал 2 — фронтенд
 cd frontend/booking-frontend
-npm install
+npm install        # только первый раз
 npm run dev
 ```
 
 Открыть http://localhost:5173
+
+Vite dev server поддерживает горячую перезагрузку — изменения в `.tsx`/`.css` отражаются в браузере сразу без рестарта.
+
+#### Переменные окружения фронтенда
+
+Создать файл `frontend/booking-frontend/.env.local` (не коммитится):
+
+```
+# URL nginx gateway. Менять только при нестандартном порту.
+VITE_GATEWAY_URL=http://localhost:8080
+
+# Включить кнопку "Sign in" (Google OAuth).
+# Оставить false пока Google credentials не настроены в .env.
+# При false виден только "Demo mode" — достаточно для PoC.
+VITE_GOOGLE_AUTH_ENABLED=false
+```
+
+#### Авторизация в UI
+
+| Режим | Когда использовать |
+|---|---|
+| **Demo mode** | Всегда работает — устанавливает фиксированный `guestId` без OAuth |
+| **Sign in** | Требует настроенных Google credentials в Consul и `VITE_GOOGLE_AUTH_ENABLED=true` |
+
+#### Настройка Google OAuth (через Consul KV)
+
+Credentials хранятся в Consul — **не** в `.env` и не в docker-compose.
+Auth-service читает их из Consul при старте (приоритет: env → Consul).
+
+**Шаг 1.** Создать OAuth 2.0 Client ID в [Google Cloud Console](https://console.cloud.google.com/):
+- Application type: **Web application**
+- Authorized redirect URI: `http://localhost:8080/api/auth/callback`
+
+**Шаг 2.** Записать credentials в Consul (Consul должен быть запущен):
+
+```bash
+curl -X PUT -d "<CLIENT_ID>.apps.googleusercontent.com" \
+  http://localhost:8500/v1/kv/config/GOOGLE_CLIENT_ID
+
+curl -X PUT -d "<CLIENT_SECRET>" \
+  http://localhost:8500/v1/kv/config/GOOGLE_CLIENT_SECRET
+```
+
+**Шаг 3.** Перезапустить auth-service:
+
+```bash
+docker compose -f docker-compose.poc.yml restart auth-service
+```
+
+**Шаг 4.** Включить кнопку Sign in в фронтенде — добавить в `frontend/booking-frontend/.env.local`:
+
+```
+VITE_GOOGLE_AUTH_ENABLED=true
+```
+
+**Проверить текущие значения в Consul:**
+
+```bash
+# CLIENT_ID
+curl -s http://localhost:8500/v1/kv/config/GOOGLE_CLIENT_ID \
+  | jq -r '.[0].Value' | base64 -d
+
+# CLIENT_SECRET (маскируем вывод)
+curl -s http://localhost:8500/v1/kv/config/GOOGLE_CLIENT_SECRET \
+  | jq -r '.[0].Value' | base64 -d | cut -c1-6
+```
+
+**Удалить/перезаписать** — повторный `curl -X PUT` перезаписывает значение.
+
+#### Альтернатива: запуск фронтенда внутри Docker Compose
+
+Если нужно поднять фронтенд вместе с остальными сервисами одной командой,
+добавить в `docker-compose.poc.yml`:
+
+```yaml
+frontend:
+  image: node:20-alpine
+  working_dir: /app
+  volumes:
+    - ./frontend/booking-frontend:/app
+  command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+  ports:
+    - "5173:5173"
+  networks: [booking-net]
+```
+
+После этого `docker compose -f docker-compose.poc.yml up -d` поднимет и фронтенд.
+Hot reload работает через volume-маунт.
+
+#### Производственный билд (без hot reload)
+
+```bash
+cd frontend/booking-frontend
+npm run build        # результат в dist/
+npm run preview      # локальный preview собранного dist/
+```
+
+Папку `dist/` можно раздать любым статическим сервером (nginx, Caddy и т.д.).
+Для PoC demo достаточно `npm run dev`.
 
 ---
 

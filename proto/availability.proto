@@ -1,0 +1,17 @@
+syntax = "proto3";
+package availability.v1;
+option csharp_namespace = "AvailabilityService.Contracts.Grpc.V1";
+option go_package = "availability-service/api/gen/go/availabilityv1;availabilityv1";
+
+service AvailabilityService {
+  rpc GetOccupancy (GetOccupancyRequest) returns (GetOccupancyReply);
+}
+
+message GetOccupancyRequest {
+  string roomId = 1;
+  string date   = 2; // ISO yyyy-MM-dd
+}
+
+message GetOccupancyReply {
+  int32 occupancyPercent = 1; // 0..100
+}
