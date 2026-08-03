@@ -1,0 +1,135 @@
+syntax = "proto3";
+
+package room;
+
+option go_package = "github.com/vshengur/bookings.room-service/proto";
+
+import "google/protobuf/timestamp.proto";
+
+// RoomService provides gRPC API for room operations
+service RoomService {
+  rpc GetRoom(GetRoomRequest) returns (GetRoomResponse);
+  rpc CheckAvailability(CheckAvailabilityRequest) returns (CheckAvailabilityResponse);
+  rpc ReserveRoom(ReserveRoomRequest) returns (ReserveRoomResponse);
+  rpc ReleaseRoom(ReleaseRoomRequest) returns (ReleaseRoomResponse);
+  rpc SearchRooms(SearchRoomsRequest) returns (SearchRoomsResponse);
+}
+
+// Messages for GetRoom
+message GetRoomRequest {
+  int64 room_id = 1;
+}
+
+message GetRoomResponse {
+  Room room = 1;
+}
+
+// Messages for CheckAvailability
+message CheckAvailabilityRequest {
+  int64 room_id = 1;
+  google.protobuf.Timestamp check_in = 2;
+  google.protobuf.Timestamp check_out = 3;
+}
+
+message CheckAvailabilityResponse {
+  int64 room_id = 1;
+  bool is_available = 2;
+  google.protobuf.Timestamp check_in = 3;
+  google.protobuf.Timestamp check_out = 4;
+  double price_per_night = 5;
+  double total_price = 6;
+  string currency = 7;
+}
+
+// Messages for ReserveRoom
+message ReserveRoomRequest {
+  int64 room_id = 1;
+  string booking_reference = 2;
+  google.protobuf.Timestamp check_in = 3;
+  google.protobuf.Timestamp check_out = 4;
+}
+
+message ReserveRoomResponse {
+  int64 reservation_id = 1;
+  int64 room_id = 2;
+  string booking_reference = 3;
+  google.protobuf.Timestamp check_in = 4;
+  google.protobuf.Timestamp check_out = 5;
+  google.protobuf.Timestamp reserved_until = 6;
+  string status = 7;
+}
+
+// Messages for ReleaseRoom
+message ReleaseRoomRequest {
+  int64 room_id = 1;
+  string booking_reference = 2;
+}
+
+message ReleaseRoomResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+// Messages for SearchRooms
+message SearchRoomsRequest {
+  google.protobuf.Timestamp check_in = 1;
+  google.protobuf.Timestamp check_out = 2;
+  int32 adults = 3;
+  int32 children = 4;
+  double min_price = 5;
+  double max_price = 6;
+  string room_type = 7;
+  int32 min_capacity = 8;
+  repeated string amenities = 9;
+  int32 page = 10;
+  int32 page_size = 11;
+  string sort_by = 12;
+}
+
+message SearchRoomsResponse {
+  repeated Room rooms = 1;
+  int64 total_count = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+  int32 total_pages = 5;
+}
+
+// Room entity
+message Room {
+  int64 id = 1;
+  string room_number = 2;
+  string room_type = 3;
+  int32 floor = 4;
+  int32 capacity = 5;
+  string bed_type = 6;
+  double size = 7;
+  string description = 8;
+  double base_price = 9;
+  string currency = 10;
+  bool is_active = 11;
+  repeated RoomAmenity amenities = 12;
+  repeated RoomImage images = 13;
+  google.protobuf.Timestamp created_at = 14;
+  google.protobuf.Timestamp updated_at = 15;
+}
+
+// RoomAmenity entity
+message RoomAmenity {
+  int64 id = 1;
+  int64 room_id = 2;
+  string amenity_type = 3;
+  string name = 4;
+  string description = 5;
+  string icon_url = 6;
+}
+
+// RoomImage entity
+message RoomImage {
+  int64 id = 1;
+  int64 room_id = 2;
+  string url = 3;
+  string title = 4;
+  string description = 5;
+  bool is_primary = 6;
+  int32 sort_order = 7;
+}
