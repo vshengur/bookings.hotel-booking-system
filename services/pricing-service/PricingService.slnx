@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="PricingService.Application/PricingService.Application.csproj" />
+  <Project Path="PricingService.Domain/PricingService.Domain.csproj" />
+  <Project Path="PricingService.Infrastructure/PricingService.Infrastructure.csproj" />
+  <Project Path="PricingService/PricingService.csproj" />
+</Solution>

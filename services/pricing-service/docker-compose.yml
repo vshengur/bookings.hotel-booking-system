@@ -1,0 +1,57 @@
+services:
+  pricing-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pricing-service
+    ports:
+      - "5003:5003"
+      - "5103:5103"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__DefaultConnection=Host=pricing-db;Port=5432;Database=pricing_db;Username=postgres;Password=${POSTGRES_PASSWORD:-postgres}
+      - Consul__Address=http://consul:8500
+      - Consul__ServiceName=pricing-service
+      - Consul__ServiceId=pricing-service-1
+      - Consul__ServiceAddress=pricing-service
+      - Consul__ServicePort=5003
+    depends_on:
+      pricing-db:
+        condition: service_healthy
+    networks:
+      - booking-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5003/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
+  pricing-db:
+    image: postgres:16-alpine
+    container_name: pricing-db
+    environment:
+      - POSTGRES_DB=pricing_db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+    ports:
+      - "5434:5432"
+    volumes:
+      - pricing-db-data:/var/lib/postgresql/data
+    networks:
+      - booking-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pricing-db-data:
+    driver: local
+
+networks:
+  booking-net:
+    external: true
