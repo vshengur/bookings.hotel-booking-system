@@ -4,7 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Distributed microservices hotel booking system targeting 10,000 RPS. Mixed-language: .NET 10 for business services, Go 1.23+ for auth/room/payment. Currently in PoC phase — some integrations are stubs or partially simulated.
+Distributed microservices hotel booking system targeting 10,000 RPS. Mixed-language: .NET 10 for business services, Go 1.23+ for auth/room. Currently in PoC phase — some integrations are stubs or partially simulated.
+
+## Repository Structure
+
+True monorepo — all services live as regular directories under `services/`/`frontend/` with full commit history preserved (migrated from git submodules). No `.gitmodules`, no nested `.git` directories. `archive/` holds retired experiments kept for reference only (not built, not part of any active flow) — currently `payment-service-go` and `api-gateway-golang`, both superseded by the canonical .NET `payment-service` and the nginx `dev-gateway`.
 
 ## Build & Test Commands
 
@@ -27,25 +31,22 @@ dotnet ef database update --project ../Infrastructure
 docker compose up --build
 ```
 
-### Go Services (auth-service, room-service, payment-service-go, api-gateway-golang)
+### Go Services (auth-service, room-service)
 ```bash
 go build ./...
 go test ./...
 go test ./... -v -run TestName   # single test
 ```
 
-Payment Service Go has a Makefile:
-```bash
-make build   # → ./bin/payment-service
-make run
-make test
-make gen     # regenerate protobuf code
-```
-
 Auth Service gRPC codegen:
 ```bash
 protoc --go_out=. --go-grpc_out=. ../../proto/auth.proto
 ```
+
+### Gateway (PoC)
+`services/dev-gateway` — nginx reverse proxy, the gateway actually wired into `docker-compose.poc.yml`. No build step; edit `nginx/conf.d/gateway.conf` and restart the container.
+
+`services/api-gateway` (.NET/YARP) exists but is **parked** — not referenced by `docker-compose.poc.yml`. Don't add routing logic there unless explicitly reviving it.
 
 ### Kubernetes
 ```bash
@@ -57,7 +58,7 @@ make k8s-apply   # kubectl apply -f k8s/
 
 ### Request Flow
 ```
-Client → API Gateway (YARP/.NET or Gorilla Mux/Go)
+Client → dev-gateway (nginx, PoC)
        → Consul service discovery
        → Backend services (REST)
        → Internal gRPC for cross-service calls
@@ -66,16 +67,17 @@ Client → API Gateway (YARP/.NET or Gorilla Mux/Go)
 
 ### Service Map
 
-| Service | Lang | Port | DB |
-|---|---|---|---|
-| api-gateway | .NET 9 | — | — |
-| api-gateway-golang | Go | — | — |
-| bookings-service | .NET 10 | 5001 | postgres |
-| payment-service | .NET 10 | 5002 | postgres |
-| payment-service-go | Go | 8080 | postgres:5433 + Redis |
-| pricing-service | .NET 10 | 5003 | postgres:5434 |
-| auth-service | Go 1.23 | 5000 | postgres:5432 |
-| room-service | Go 1.23 | 8083 | postgres:5432 |
+| Service | Lang | Port | DB | Status |
+|---|---|---|---|---|
+| dev-gateway | nginx | 8080 | — | active (wired in docker-compose.poc.yml) |
+| api-gateway | .NET/YARP | 8080 | — | parked, not wired into PoC compose |
+| bookings-service | .NET 10 | 5001 | postgres | active |
+| payment-service | .NET 10 | 5002 | postgres | active |
+| pricing-service | .NET 10 | 5003 | postgres:5434 | active |
+| auth-service | Go 1.23 | 5000 | postgres:5432 | active |
+| room-service | Go 1.23 | 8083 | postgres:5432 | active |
+
+Archived (see `archive/`, not built/deployed): `payment-service-go` (Go rewrite of payment-service), `api-gateway-golang` (Go rewrite of api-gateway).
 
 ### Internal gRPC Contracts (`proto/`)
 - `auth.proto` — `AuthService.ValidateToken` (used by gateway to authenticate requests)
@@ -108,7 +110,6 @@ CQRS in bookings-service (MediatR). EF Core migrations live in Infrastructure pr
 
 ### Go Service Architecture Pattern
 - auth-service, room-service: Gin + GORM/pgx + OpenTelemetry
-- payment-service-go: Hexagonal (Ports & Adapters), Redis caching, RabbitMQ consumer
 
 ## Key Configuration
 
@@ -117,7 +118,6 @@ Infra env template: `infra/.env.example`
 Critical env vars per service:
 - All Go services: `CONSUL_ADDRESS` (service discovery), `DB_*` (postgres)
 - auth-service: `JWT_SECRET`, `GOOGLE_CLIENT_ID/SECRET/REDIRECT_URL`
-- payment-service-go: `REDIS_URL`, `RABBIT_URL`, `PSP_BASE_URL`
 - .NET services: Consul endpoint in `appsettings.json`, EF connection string
 
 Logging: .NET → Serilog → Seq (`http://seq:5341`); Go → Zap JSON stdout.
@@ -128,3 +128,4 @@ Logging: .NET → Serilog → Seq (`http://seq:5341`); Go → Zap JSON stdout.
 - Frontend apps are scaffolding only
 - Room ID contract mismatch between bookings-service and room-service (not yet resolved)
 - Gateway routing not fully aligned with end-to-end user flow
+- Two parked/archived alternative implementations exist for payment-service and api-gateway (Go rewrites) — see Service Map. Don't resurrect them without an explicit decision; the .NET/nginx versions are canonical.
