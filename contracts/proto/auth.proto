@@ -1,6 +1,8 @@
 syntax = "proto3";
 
-package auth;
+package auth.v1;
+option csharp_namespace = "AuthService.Contracts.Grpc.V1";
+option go_package = "auth-service/api/gen/go/authv1;authv1";
 
 // Сервис для проверки токена
 service AuthService {

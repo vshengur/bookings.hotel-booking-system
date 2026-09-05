@@ -26,10 +26,10 @@
     <PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
   </ItemGroup>
   <ItemGroup>
-    <Protobuf Include="..\..\..\..\proto\availability.proto" GrpcServices="Client">
+    <Protobuf Include="..\..\..\..\contracts\proto\availability.proto" GrpcServices="Client">
       <Link>Protos\availability.proto</Link>
     </Protobuf>
-    <Protobuf Include="..\..\..\..\proto\payment.proto" GrpcServices="Server">
+    <Protobuf Include="..\..\..\..\contracts\proto\payment.proto" GrpcServices="Server">
       <Link>Protos\payment.proto</Link>
     </Protobuf>
   </ItemGroup>

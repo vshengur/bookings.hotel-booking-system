@@ -19,4 +19,4 @@ go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
 
 ### Генерация gRPC кода
 Теперь выполните команду для генерации:
-    protoc --go_out=. --go-grpc_out=. ../../proto/auth.proto
+    protoc --go_out=. --go-grpc_out=. ../../contracts/proto/auth.proto
