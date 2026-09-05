@@ -1,0 +1,244 @@
+asyncapi: 3.0.0
+info:
+  title: Hotel Booking System — Async Contracts
+  version: 1.0.0
+  description: >
+    RabbitMQ/MassTransit message contracts exchanged between bookings-service and payment-service.
+    Reverse-engineered from source (common/Booking.Sharing/Booking.Contracts/Messages.cs,
+    services/payment-service/src/PaymentService.Application/Messages/*.cs) — this file is the
+    single source of truth going forward; update it in the same PR that changes a message shape.
+
+    MassTransit's default RabbitMQ topology names exchanges `{CLR namespace}:{MessageType}`.
+    Two distinct namespaces are in play here — see the `address` on each channel below.
+
+defaultContentType: application/json
+
+servers:
+  rabbitmq:
+    host: rabbitmq:5672
+    protocol: amqp
+
+channels:
+  paymentStatusChanged:
+    address: 'PaymentService.Application.Messages:PaymentStatusChanged'
+    description: Published by payment-service when the PSP settles a payment intent.
+    messages:
+      paymentStatusChanged:
+        $ref: '#/components/messages/PaymentStatusChanged'
+
+  paymentIntentCreated:
+    address: 'PaymentService.Application.Messages:PaymentIntentCreated'
+    description: >
+      Published by payment-service after creating a payment intent (fire-and-forget notification).
+      Not currently consumed by bookings-service or any other known consumer.
+    messages:
+      paymentIntentCreated:
+        $ref: '#/components/messages/PaymentIntentCreated'
+
+  createBooking:
+    address: 'Bookings.Contracts:CreateBooking'
+    description: Starts the booking saga (published and consumed within bookings-service).
+    messages:
+      createBooking:
+        $ref: '#/components/messages/CreateBooking'
+
+  bookingCreated:
+    address: 'Bookings.Contracts:BookingCreated'
+    messages:
+      bookingCreated:
+        $ref: '#/components/messages/BookingCreated'
+
+  paymentAuthorized:
+    address: 'Bookings.Contracts:PaymentAuthorized'
+    description: >
+      Internal saga event. Published by PaymentStatusChangedConsumer after translating
+      PaymentStatusChanged{Status:"succeeded"} — not published by payment-service directly.
+    messages:
+      paymentAuthorized:
+        $ref: '#/components/messages/PaymentAuthorized'
+
+  paymentFailed:
+    address: 'Bookings.Contracts:PaymentFailed'
+    description: >
+      Internal saga event. Published by PaymentStatusChangedConsumer after translating
+      PaymentStatusChanged{Status:"failed"} — not published by payment-service directly.
+    messages:
+      paymentFailed:
+        $ref: '#/components/messages/PaymentFailed'
+
+  confirmInPms:
+    address: 'Bookings.Contracts:ConfirmInPms'
+    messages:
+      confirmInPms:
+        $ref: '#/components/messages/ConfirmInPms'
+
+  pmsConfirmed:
+    address: 'Bookings.Contracts:PmsConfirmed'
+    messages:
+      pmsConfirmed:
+        $ref: '#/components/messages/PmsConfirmed'
+
+  cancelBooking:
+    address: 'Bookings.Contracts:CancelBooking'
+    messages:
+      cancelBooking:
+        $ref: '#/components/messages/CancelBooking'
+
+  bookingCancelled:
+    address: 'Bookings.Contracts:BookingCancelled'
+    messages:
+      bookingCancelled:
+        $ref: '#/components/messages/BookingCancelled'
+
+operations:
+  sendPaymentStatusChanged:
+    action: send
+    channel:
+      $ref: '#/channels/paymentStatusChanged'
+    summary: payment-service → bookings-service, on PSP settlement.
+
+  sendPaymentAuthorized:
+    action: send
+    channel:
+      $ref: '#/channels/paymentAuthorized'
+    summary: bookings-service internal, consumed by BookingStateMachine (AwaitingPayment → Reserved).
+
+  sendPaymentFailed:
+    action: send
+    channel:
+      $ref: '#/channels/paymentFailed'
+    summary: bookings-service internal, consumed by BookingStateMachine (AwaitingPayment → Failed).
+
+components:
+  messages:
+    PaymentStatusChanged:
+      summary: PSP settlement result for a booking's payment intent.
+      payload:
+        type: object
+        required: [bookingId, status]
+        properties:
+          bookingId:
+            type: string
+            format: uuid
+          status:
+            type: string
+            enum: [succeeded, failed, refunded]
+            description: >
+              "refunded" is currently a no-op in PaymentStatusChangedConsumer — the cancellation
+              flow (CancelBooking) already owns that transition.
+
+    PaymentIntentCreated:
+      summary: Payment intent was created at the PSP. Not consumed by any known subscriber.
+      payload:
+        type: object
+        required: [bookingId, intentId, amount, currency, pspPayload]
+        properties:
+          bookingId:
+            type: string
+            format: uuid
+          intentId:
+            type: string
+            format: uuid
+          amount:
+            type: integer
+            format: int64
+            description: Minor units (e.g. cents).
+          currency:
+            type: string
+          pspPayload:
+            type: string
+
+    CreateBooking:
+      payload:
+        type: object
+        required: [bookingId]
+        properties:
+          bookingId:
+            type: string
+            format: uuid
+
+    BookingCreated:
+      payload:
+        type: object
+        required: [bookingId, totalPrice]
+        properties:
+          bookingId:
+            type: string
+            format: uuid
+          totalPrice:
+            $ref: '#/components/schemas/Money'
+
+    PaymentAuthorized:
+      payload:
+        type: object
+        required: [bookingId, paymentProviderRef]
+        properties:
+          bookingId:
+            type: string
+            format: uuid
+          paymentProviderRef:
+            type: string
+
+    PaymentFailed:
+      payload:
+        type: object
+        required: [bookingId, error]
+        properties:
+          bookingId:
+            type: string
+            format: uuid
+          error:
+            type: string
+
+    ConfirmInPms:
+      payload:
+        type: object
+        required: [bookingId]
+        properties:
+          bookingId:
+            type: string
+            format: uuid
+
+    PmsConfirmed:
+      payload:
+        type: object
+        required: [bookingId, pmsNumber]
+        properties:
+          bookingId:
+            type: string
+            format: uuid
+          pmsNumber:
+            type: string
+
+    CancelBooking:
+      payload:
+        type: object
+        required: [bookingId, reason]
+        properties:
+          bookingId:
+            type: string
+            format: uuid
+          reason:
+            type: string
+
+    BookingCancelled:
+      payload:
+        type: object
+        required: [bookingId, reason]
+        properties:
+          bookingId:
+            type: string
+            format: uuid
+          reason:
+            type: string
+
+  schemas:
+    Money:
+      type: object
+      required: [currency, amountMinor]
+      properties:
+        currency:
+          type: string
+        amountMinor:
+          type: integer
+          format: int64

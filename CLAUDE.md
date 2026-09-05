@@ -40,7 +40,7 @@ go test ./... -v -run TestName   # single test
 
 Auth Service gRPC codegen:
 ```bash
-protoc --go_out=. --go-grpc_out=. ../../proto/auth.proto
+protoc --go_out=. --go-grpc_out=. ../../contracts/proto/auth.proto
 ```
 
 ### Gateway (PoC)
@@ -79,19 +79,27 @@ Client → dev-gateway (nginx, PoC)
 
 Archived (see `archive/`, not built/deployed): `payment-service-go` (Go rewrite of payment-service), `api-gateway-golang` (Go rewrite of api-gateway).
 
-### Internal gRPC Contracts (`proto/`)
+### Internal gRPC Contracts (`contracts/proto/`)
 - `auth.proto` — `AuthService.ValidateToken` (used by gateway to authenticate requests)
 - `payment.proto` — `PaymentService.{Quote, CreateIntent, Refund}`
 - `availability.proto` — `AvailabilityService.GetOccupancy`
 
 ### Async Messaging (RabbitMQ + MassTransit)
-Booking creation uses a **saga** (Automatonymous state machine in bookings-service):
-1. Saga emits `PaymentIntentCreated` → payment service
-2. Payment responds `PaymentSucceeded` / `PaymentFailed`
-3. On success: PMS confirmation with 2 min timeout; payment has 15 min timeout
-4. Failed steps trigger compensation (rollback)
+Booking creation uses a **saga** (`BookingStateMachine`, MassTransit state machine in bookings-service, state persisted in MongoDB):
+1. `CreateBooking` starts the saga → reserves inventory and calls payment-service **synchronously** (`IPaymentGateway.CreateIntentAsync`, HTTP) to create a payment intent. A 15 min payment timeout is scheduled (`BookingConstants.PaymentTimeout`, via Hangfire message scheduler).
+2. payment-service publishes `PaymentStatusChanged` (`Status: succeeded|failed|refunded`) when the PSP settles. bookings-service's `PaymentStatusChangedConsumer` translates this into the saga's own internal `PaymentAuthorized` / `PaymentFailed` events (`refunded` is currently ignored here — cancellation flow owns that transition).
+3. On `PaymentAuthorized`: saga requests PMS confirmation (`RequestPmsConfirmationCommand`) and moves to `Reserved`. **No timeout is implemented for this step** — if the PMS never responds, the booking stays in `Reserved` indefinitely (real gap, not the CLAUDE.md-documented "2 min timeout" that older docs claimed — that timeout does not exist in code).
+4. On `PmsConfirmed`: saga moves to `Confirmed`.
+5. On `PaymentFailed`, payment timeout, or `CancelBooking`: saga triggers `RefundPaymentCommand` and moves to `Failed`/`Cancelled` (compensation).
 
-Topic exchange pattern: `Bookings.Contracts:*`, `Prices.Contracts:*`
+payment-service also publishes `PaymentIntentCreated` (fire-and-forget notification when an intent is created) — bookings-service does not currently consume it.
+
+Topic exchange pattern (MassTransit default: `{CLR namespace}:{MessageType}`):
+- `Bookings.Contracts:*` — saga's own events (`CreateBooking`, `BookingCreated`, `PaymentAuthorized`, `PaymentFailed`, `ConfirmInPms`, `PmsConfirmed`, `CancelBooking`, `BookingCancelled`), defined in `common/Booking.Sharing/Booking.Contracts/Messages.cs`.
+- `PaymentService.Application.Messages:*` — the actual payment→bookings wire contracts (`PaymentStatusChanged`, `PaymentIntentCreated`).
+- No pricing events exist yet (pricing-service is not wired into the saga; earlier docs mentioning `Prices.Contracts:*` were aspirational, not implemented).
+
+See `contracts/events/asyncapi.yaml` for the full message schema.
 
 ### Shared Libraries (`common/Booking.Sharing/`)
 - `Booking.Common` — base entities, domain events, value objects
@@ -127,4 +135,5 @@ Logging: .NET → Serilog → Seq (`http://seq:5341`); Go → Zap JSON stdout.
 - Inventory/Notification services are placeholders
 - Frontend apps are scaffolding only
 - Gateway routing not fully aligned with end-to-end user flow
+- No timeout on PMS confirmation: a booking that reaches `Reserved` and never gets `PmsConfirmed` stays there forever (only the 15 min payment timeout is actually scheduled)
 - Two parked/archived alternative implementations exist for payment-service and api-gateway (Go rewrites) — see Service Map. Don't resurrect them without an explicit decision; the .NET/nginx versions are canonical.
