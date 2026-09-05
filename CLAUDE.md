@@ -126,6 +126,5 @@ Logging: .NET → Serilog → Seq (`http://seq:5341`); Go → Zap JSON stdout.
 - Fake PMS (Property Management System) — intentional for PoC
 - Inventory/Notification services are placeholders
 - Frontend apps are scaffolding only
-- Room ID contract mismatch between bookings-service and room-service (not yet resolved)
 - Gateway routing not fully aligned with end-to-end user flow
 - Two parked/archived alternative implementations exist for payment-service and api-gateway (Go rewrites) — see Service Map. Don't resurrect them without an explicit decision; the .NET/nginx versions are canonical.
