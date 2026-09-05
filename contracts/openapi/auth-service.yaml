@@ -1,0 +1,132 @@
+openapi: 3.0.3
+info:
+  title: auth-service — REST surface
+  version: 1.0.0
+  description: >
+    Hand-authored — auth-service (Go/Gin) has no OpenAPI generator wired up. This covers
+    every route registered in routes/routes.go and exposed through dev-gateway at
+    `/api/auth/*` (nginx strips the `/api/auth/` prefix and proxies the rest as-is, so
+    every route below is reachable, not just the ones the still-scaffolding frontend
+    currently calls).
+
+    auth-service also exposes a separate gRPC surface (`ValidateToken`) used internally —
+    see contracts/proto/auth.proto. The REST `/validate-token` below is a second,
+    independent implementation of the same check; the two are not guaranteed to agree if
+    one changes without the other — treat that as a known duplication, not a deliberate
+    two-tier design.
+
+    Verified against services/auth-service/handlers/{auth,token,user}.go and models/user.go.
+
+servers:
+  - url: http://auth-service:5000
+
+paths:
+  /login:
+    get:
+      operationId: login
+      summary: Returns the Google OAuth consent URL for the client to redirect to.
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [auth_url]
+                properties:
+                  auth_url: { type: string, format: uri }
+
+  /callback:
+    get:
+      operationId: googleCallback
+      summary: >
+        Google OAuth redirect target. Exchanges the code, finds-or-creates the user,
+        issues a JWT, then 302-redirects the browser to `FrontendURL?token=<jwt>`
+        (not a JSON response).
+      parameters:
+        - name: code
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        '302': { description: 'Redirect to `${FRONTEND_URL}?token=<jwt>`' }
+        '400': { description: Missing code }
+        '500': { description: Google exchange or token generation failed }
+
+  /validate-token:
+    get:
+      operationId: validateTokenRest
+      summary: REST duplicate of the gRPC ValidateToken RPC — see description above.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [message, claims]
+                properties:
+                  message: { type: string }
+                  claims: { type: object, additionalProperties: true }
+        '401': { description: Missing or invalid Authorization header / token }
+
+  /users:
+    get:
+      operationId: getAllUsers
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/User' }
+    post:
+      operationId: createUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/User' }
+      responses:
+        '201':
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/User' }
+        '400': { description: Invalid body }
+
+  /users/{id}:
+    get:
+      operationId: getUserById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/User' }
+        '400': { description: Invalid id }
+        '404': { description: Not found }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    User:
+      type: object
+      description: >
+        `UserID` is a stable UUID string used as the cross-service guestId — this is the
+        identifier other services should reference, not the numeric gorm primary key (`ID`,
+        inherited from gorm.Model, not itself part of any documented cross-service contract).
+      properties:
+        ID: { type: integer, description: 'gorm.Model primary key — internal to auth-service' }
+        UserID: { type: string, format: uuid, description: cross-service guestId }
+        Email: { type: string, format: email }
+        FullName: { type: string }
+        Role: { type: string }

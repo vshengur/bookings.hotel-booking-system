@@ -1,0 +1,127 @@
+openapi: 3.0.3
+info:
+  title: room-service — cross-service surface
+  version: 1.0.0
+  description: >
+    Hand-authored, scoped to only the endpoints bookings-service actually calls
+    (see services/bookings-service/src/Infrastructure/Adapters/RoomServiceInventoryGateway.cs).
+    room-service has no OpenAPI/Swagger of its own (Go/Gin, no generator wired up) — this file
+    is the contract of record for this boundary until that changes. It is NOT a full API
+    reference for room-service (search/CRUD endpoints are omitted; they have no external
+    consumers today).
+
+    Verified against services/room-service/internal/handlers/room_handler.go and
+    internal/models/dto.go. Room IDs are int64 end-to-end (bookings-service, room-service,
+    and pricing-service all agree — see CLAUDE.md, this was previously a documented mismatch
+    that turned out to already be fixed in code).
+
+servers:
+  - url: http://room-service:8083
+
+paths:
+  /api/rooms/{id}/availability:
+    get:
+      operationId: checkAvailability
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer, format: int64 }
+        - name: checkIn
+          in: query
+          required: true
+          schema: { type: string, format: date-time }
+          description: RFC3339, e.g. "2026-06-01T00:00:00Z"
+        - name: checkOut
+          in: query
+          required: true
+          schema: { type: string, format: date-time }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AvailabilityResponse' }
+        '400': { description: Invalid room id or query params }
+        '404': { description: Room not found }
+        '500': { description: Internal error }
+
+  /api/rooms/{id}/reserve:
+    post:
+      operationId: reserveRoom
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer, format: int64 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ReserveRoomRequest' }
+      responses:
+        '201':
+          description: Reserved
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ReserveRoomResponse' }
+        '400': { description: Invalid room id or request body }
+        '409': { description: Room not available for the requested dates (caller maps this to a business-rule failure) }
+        '500': { description: Internal error }
+
+  /api/rooms/{id}/release:
+    post:
+      operationId: releaseRoom
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer, format: int64 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ReleaseRoomRequest' }
+      responses:
+        '200': { description: Released }
+        '404': { description: 'Reservation not found (caller treats this as success — already released)' }
+        '500': { description: Internal error }
+
+components:
+  schemas:
+    AvailabilityResponse:
+      type: object
+      required: [room_id, is_available, check_in, check_out]
+      properties:
+        room_id: { type: integer, format: int64 }
+        is_available: { type: boolean }
+        check_in: { type: string, format: date-time }
+        check_out: { type: string, format: date-time }
+
+    ReserveRoomRequest:
+      type: object
+      required: [check_in, check_out, booking_reference]
+      properties:
+        check_in: { type: string, format: date-time }
+        check_out: { type: string, format: date-time }
+        booking_reference:
+          type: string
+          description: bookings-service sends the booking's GUID (as string) here.
+
+    ReserveRoomResponse:
+      type: object
+      required: [reservation_id, room_id, booking_reference, check_in, check_out, reserved_until, status]
+      properties:
+        reservation_id: { type: integer, format: int64 }
+        room_id: { type: integer, format: int64 }
+        booking_reference: { type: string }
+        check_in: { type: string, format: date-time }
+        check_out: { type: string, format: date-time }
+        reserved_until: { type: string, format: date-time }
+        status: { type: string }
+
+    ReleaseRoomRequest:
+      type: object
+      required: [booking_reference]
+      properties:
+        booking_reference: { type: string }
