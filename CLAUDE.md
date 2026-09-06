@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Distributed microservices hotel booking system targeting 10,000 RPS. Mixed-language: .NET 10 for business services, Go 1.23+ for auth/room. Currently in PoC phase — some integrations are stubs or partially simulated.
+Distributed microservices hotel booking system targeting 10,000 RPS. Mixed-language: .NET (9 or 10, per service — see Service Map) for business services, Go 1.23+ for auth/room. Currently in PoC phase — some integrations are stubs or partially simulated.
 
 ## Repository Structure
 
@@ -71,8 +71,8 @@ Client → dev-gateway (nginx, PoC)
 |---|---|---|---|---|
 | dev-gateway | nginx | 8080 | — | active (wired in docker-compose.poc.yml) |
 | api-gateway | .NET/YARP | 8080 | — | parked, not wired into PoC compose |
-| bookings-service | .NET 10 | 5001 | postgres | active |
-| payment-service | .NET 10 | 5002 | postgres | active |
+| bookings-service | .NET 9 | 5001 | postgres | active |
+| payment-service | .NET 9 | 5002 | postgres | active |
 | pricing-service | .NET 10 | 5003 | postgres:5434 | active |
 | auth-service | Go 1.23 | 5000 | postgres:5432 | active |
 | room-service | Go 1.23 | 8083 | postgres:5432 | active |
