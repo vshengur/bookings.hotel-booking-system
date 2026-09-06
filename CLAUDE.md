@@ -80,9 +80,27 @@ Client → dev-gateway (nginx, PoC)
 Archived (see `archive/`, not built/deployed): `payment-service-go` (Go rewrite of payment-service), `api-gateway-golang` (Go rewrite of api-gateway).
 
 ### Internal gRPC Contracts (`contracts/proto/`)
-- `auth.proto` — `AuthService.ValidateToken` (used by gateway to authenticate requests)
-- `payment.proto` — `PaymentService.{Quote, CreateIntent, Refund}`
-- `availability.proto` — `AvailabilityService.GetOccupancy`
+None of these are fully wired end-to-end today — verified against actual DI registrations,
+not assumed from the .proto files existing:
+- `auth.proto` (`AuthService.ValidateToken`) — **unused**. No client or server implementation
+  anywhere in the codebase. Both the active dev-gateway (nginx) and the parked api-gateway
+  call auth-service's REST `/validate-token` instead (`AuthenticationMiddleware.cs` in
+  api-gateway uses a plain `HttpClient`, not this proto).
+- `payment.proto` (`PaymentService.{Quote, CreateIntent, Refund}`) — **server unimplemented**.
+  payment-service never calls `AddGrpc()`/`MapGrpc*()`, despite generating server scaffolding
+  from this proto. A gRPC client exists (`PaymentGatewayGrpc.cs` in bookings-service) but is
+  dead code — DI wires `IPaymentGateway` to `PaymentGatewayHttp` (REST) instead. Payment
+  intent creation is REST end-to-end; see `contracts/events/asyncapi.yaml` for the async
+  result path.
+- `availability.proto` (`AvailabilityService.GetOccupancy`) — **client active, server
+  unimplemented**. payment-service registers a real `AvailabilityServiceClient`
+  (`OccupancyAdapter`, wrapped in `CachedOccupancyService`) and will call it at runtime, but
+  no service in this repo implements `AvailabilityServiceBase` — this call has nowhere to
+  land unless an external service does.
+
+If you're implementing a new cross-service gRPC call, check whether the .proto already
+"exists" before assuming it's live — grep for the generated `*Client`/`*Base` usage and its
+DI registration, the way this section was verified.
 
 ### Async Messaging (RabbitMQ + MassTransit)
 Booking creation uses a **saga** (`BookingStateMachine`, MassTransit state machine in bookings-service, state persisted in MongoDB):
