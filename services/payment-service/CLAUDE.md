@@ -1,8 +1,15 @@
 # payment-service
 
-Clean Architecture: `src/PaymentService.Domain` → `.Application` → `.Infrastructure` →
-`.API`. Best-tested service in the repo — `tests/Domain.Tests` (builders/validators) and
-`tests/Integration.Tests` (`PaymentApiWebApplicationFactory` + `PaymentIntentApiTests`,
+Nominally Clean Architecture (`src/PaymentService.Domain` → `.Application` →
+`.Infrastructure` → `.API`), but **`PaymentService.Domain` has zero source files** — an
+empty scaffold project, not a rich domain model. What would normally be domain logic
+(builders, validators) actually lives in `.Application`. `tests/Domain.Tests` is
+misleadingly named as a result — it references both projects but is really testing
+`.Application` code. Don't add real domain logic to the empty `.Domain` project without a
+deliberate decision to actually start using it; right now nothing does.
+
+Best-tested service in the repo regardless — `tests/Domain.Tests` (builders/validators)
+and `tests/Integration.Tests` (`PaymentApiWebApplicationFactory` + `PaymentIntentApiTests`,
 real ASP.NET Core test host). Follow this project's testing pattern as the template for
 other .NET services rather than inventing a new one.
 
