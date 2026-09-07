@@ -2,7 +2,9 @@
 
 Proper `internal/` package layout (handlers/repository/services/models under
 `internal/`, not importable from other modules) — this is the Go layering convention to
-copy for other Go services, not auth-service's flat one.
+copy for other Go services, not auth-service's flat one. `.go-arch-lint.yml` enforces
+`handlers → services → repository → models` here and currently passes clean — keep it that
+way; don't add a direct `handlers → repository` shortcut even though Go wouldn't stop you.
 
 Has some test coverage (`tests/unit/pricing_strategy_test.go`, `room_builder_test.go`) but
 not for the handlers — the three endpoints bookings-service actually calls

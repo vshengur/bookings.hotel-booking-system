@@ -1,0 +1,67 @@
+version: 3
+
+allow:
+  depOnAnyVendor: true # enforcing internal layering here, not vendor allowlisting
+
+exclude:
+  - vendor
+
+components:
+  cmd:
+    in: cmd
+  routes:
+    in: routes
+  handlers:
+    in: handlers
+  services:
+    in: services
+  repository:
+    in: repository
+  models:
+    in: models
+  config:
+    in: config
+  middlewares:
+    in: middlewares
+  utils:
+    in: utils
+  database:
+    in: database
+
+commonComponents:
+  - models
+
+deps:
+  cmd:
+    anyProjectDeps: true # composition root: wires everything
+    anyVendorDeps: true
+  routes:
+    anyProjectDeps: true # wires handlers together, same composition-root nature as cmd
+    anyVendorDeps: true
+  models:
+    anyVendorDeps: true
+  repository:
+    anyVendorDeps: true
+  services:
+    mayDependOn: [repository]
+    anyVendorDeps: true
+  handlers:
+    mayDependOn: [services, repository, config, utils]
+    anyVendorDeps: true
+  middlewares:
+    mayDependOn: [config]
+    anyVendorDeps: true
+  utils:
+    mayDependOn: [config]
+    anyVendorDeps: true
+  database:
+    mayDependOn: [config]
+    anyVendorDeps: true
+  config:
+    # Intentionally NOT allowed to depend on services. config/config.go currently calls
+    # services.LoadConsulServiceConfig()/GetConsulSecret() — config (which should be the
+    # most foundational layer) reaching into services is a real inversion, not modeled
+    # here as allowed. This check is expected to fail until that's fixed by moving the
+    # Consul KV client itself into its own component (or into config) so services doesn't
+    # need to sit below config.
+    anyVendorDeps: true

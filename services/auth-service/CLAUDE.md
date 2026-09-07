@@ -19,6 +19,12 @@ pricing-service: the first test added also sets up the pattern for the rest.
   needs the same fix; they share no code.
 - `services/consul.go` — service registration/discovery. `CONSUL_FOLDER` env var picks the
   KV namespace for secrets (default `config`).
+- **`config/config.go` depends on `services`** (`services.LoadConsulServiceConfig()`,
+  `services.GetConsulSecret()`) — a real layering inversion: config is meant to be the most
+  foundational package, but it reaches into `services` to pull secrets from Consul.
+  `.go-arch-lint.yml` deliberately does *not* allow this and will report it — that's a
+  known, currently-failing check, not a bug in the linter config. Fix by moving the Consul
+  KV client itself below `config` (or into `config`) rather than adding an exception.
 - `models/user.go`: `UserID` (string UUID) is the cross-service guestId — reference that,
   not the GORM-internal numeric `ID`, if another service ever needs to key off a user.
 

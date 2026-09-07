@@ -1,0 +1,55 @@
+version: 3
+
+allow:
+  depOnAnyVendor: true # enforcing internal layering here, not vendor allowlisting
+
+exclude:
+  - tests
+
+components:
+  cmd:
+    in: cmd/server
+  handlers:
+    in: internal/handlers
+  services:
+    in: internal/services
+  repository:
+    in: internal/repository
+  models:
+    in: internal/models
+  config:
+    in: internal/config
+  middleware:
+    in: internal/middleware
+  utils:
+    in: internal/utils
+  logger:
+    in: pkg/logger
+
+commonComponents:
+  - models # value objects/DTOs, every layer may reference them
+  - logger # cross-cutting, every layer may log
+
+deps:
+  cmd:
+    anyProjectDeps: true # composition root: wires everything
+    anyVendorDeps: true
+  models:
+    anyVendorDeps: true
+  logger:
+    anyVendorDeps: true
+  repository:
+    anyVendorDeps: true
+  services:
+    mayDependOn: [repository]
+    anyVendorDeps: true
+  handlers:
+    mayDependOn: [services]
+    anyVendorDeps: true
+  middleware:
+    anyVendorDeps: true
+  utils:
+    mayDependOn: [config]
+    anyVendorDeps: true
+  config:
+    anyVendorDeps: true
